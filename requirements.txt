@@ -1,0 +1,5 @@
+# Optional: required only if you want to re-run PDF extraction from scratch
+PyMuPDF>=1.23.0
+
+# Note: The Q&A Engine, SQLite Database, Web Dashboard, and CLI Tool
+# use 100% Python standard library modules (sqlite3, http.server, socketserver, json, re, urllib).

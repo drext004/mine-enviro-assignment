@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DGMS Coal Mine Explosions & Safety Intelligence System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --card-bg: #111827;
+      --card-border: #1f293d;
+      --accent-amber: #f59e0b;
+      --accent-orange: #f97316;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-red: #ef4444;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.6;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 28px;
+    }
+
+    .header-title h1 {
+      font-size: 26px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f59e0b, #f97316, #ef4444);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-title p {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .badge-status {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge-status::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--accent-emerald);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent-emerald);
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+      margin-bottom: 32px;
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 20px;
+      border-radius: 14px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent-amber), var(--accent-orange));
+    }
+    .kpi-card.cyan::before { background: linear-gradient(90deg, #06b6d4, #3b82f6); }
+    .kpi-card.red::before { background: linear-gradient(90deg, #ef4444, #f43f5e); }
+    .kpi-card.emerald::before { background: linear-gradient(90deg, #10b981, #059669); }
+
+    .kpi-val {
+      font-size: 32px;
+      font-weight: 800;
+      margin-top: 6px;
+      color: #fff;
+    }
+    .kpi-lbl {
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--accent-amber);
+      margin-top: 4px;
+    }
+
+    /* Interactive QA Section */
+    .qa-section {
+      background: linear-gradient(180deg, #141d30 0%, #101626 100%);
+      border: 1px solid #24324f;
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 36px;
+      box-shadow: 0 20px 30px -10px rgba(0,0,0,0.5);
+    }
+
+    .qa-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .qa-header h2 {
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .qa-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .chip {
+      background: #1b263b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chip:hover {
+      background: var(--accent-amber);
+      color: #000;
+      font-weight: 600;
+      border-color: var(--accent-amber);
+    }
+
+    .qa-input-box {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .qa-input {
+      flex: 1;
+      background: #0b1120;
+      border: 1px solid #2e3e5c;
+      border-radius: 10px;
+      padding: 14px 18px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .qa-input:focus {
+      border-color: var(--accent-amber);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+    }
+    .qa-btn {
+      background: linear-gradient(135deg, var(--accent-amber), var(--accent-orange));
+      color: #111;
+      font-weight: 700;
+      border: none;
+      padding: 0 28px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .qa-btn:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .qa-response-card {
+      background: #0b1120;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 24px;
+      display: none;
+      margin-top: 16px;
+    }
+    .qa-response-card.active {
+      display: block;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Markdown Output Styles */
+    .markdown-body h3 {
+      font-size: 18px;
+      color: var(--accent-amber);
+      margin-bottom: 12px;
+      border-bottom: 1px solid #24324f;
+      padding-bottom: 6px;
+    }
+    .markdown-body h4 {
+      font-size: 16px;
+      color: var(--accent-cyan);
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+    .markdown-body p, .markdown-body ul, .markdown-body ol {
+      margin-bottom: 12px;
+      font-size: 14px;
+      color: #cbd5e1;
+    }
+    .markdown-body ul { padding-left: 20px; }
+    .markdown-body li { margin-bottom: 6px; }
+    .markdown-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+    .markdown-body th, .markdown-body td {
+      border: 1px solid #23314d;
+      padding: 10px 12px;
+      text-align: left;
+    }
+    .markdown-body th {
+      background: #172136;
+      color: #f1f5f9;
+      font-weight: 600;
+    }
+    .markdown-body tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+    .markdown-body blockquote {
+      border-left: 3px solid var(--accent-amber);
+      background: rgba(245, 158, 11, 0.08);
+      padding: 10px 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 12px 0;
+      color: #fde68a;
+      font-size: 13px;
+    }
+    .markdown-body code {
+      background: #1e293b;
+      color: #38bdf8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+    }
+
+    /* Charts Layout */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 24px;
+      margin-bottom: 36px;
+    }
+    .chart-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 22px;
+    }
+    .chart-box h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Tabs Section */
+    .tabs-header {
+      display: flex;
+      gap: 10px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 18px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--accent-amber);
+      border-bottom-color: var(--accent-amber);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Data Tables */
+    .data-table-container {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow-x: auto;
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    table.data-table th, table.data-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #1a2436;
+      text-align: left;
+    }
+    table.data-table th {
+      background: #0d1424;
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    table.data-table tr:hover {
+      background: rgba(245, 158, 11, 0.04);
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge.red { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge.amber { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge.blue { background: rgba(6, 182, 212, 0.2); color: #38bdf8; border: 1px solid rgba(6, 182, 212, 0.3); }
+
+    footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--card-border);
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="header-title">
+      <h1>💥 DGMS Mine Explosions & Safety Intelligence</h1>
+      <p>Official Analytics, Regulatory Root-Causes & Q&A Assistant based on SANKET (2016–2022)</p>
+    </div>
+    <div>
+      <span class="badge-status">SQLite Database Connected</span>
+    </div>
+  </header>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card red">
+      <div class="kpi-lbl">Historical Disasters</div>
+      <div class="kpi-val" id="kpi-hist-count">48</div>
+      <div class="kpi-sub">Major Disasters (≥4 Deaths, 1901–2022)</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-lbl">Disaster Fatalities</div>
+      <div class="kpi-val" id="kpi-hist-killed">1,361</div>
+      <div class="kpi-sub">Miners Killed in Major Disasters</div>
+    </div>
+    <div class="kpi-card emerald">
+      <div class="kpi-lbl">Root Cause Categories</div>
+      <div class="kpi-val" id="kpi-cause-count">6</div>
+      <div class="kpi-sub">Operational Failure Taxonomies</div>
+    </div>
+    <div class="kpi-card cyan">
+      <div class="kpi-lbl">Recent Detailed Cases</div>
+      <div class="kpi-val" id="kpi-rec-count">19</div>
+      <div class="kpi-sub">In-Depth Inquiries (2016–2022)</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-lbl">Courts of Inquiry</div>
+      <div class="kpi-val" id="kpi-inq-count">19</div>
+      <div class="kpi-sub">Mines Act Inquiries for Explosions</div>
+    </div>
+  </div>
+
+  <!-- Interactive QA Section (Star Feature) -->
+  <section class="qa-section">
+    <div class="qa-header">
+      <h2>🧠 Professor Q&A Assistant (Zero-Hallucination Query Engine)</h2>
+      <span style="font-size: 12px; color: #94a3b8;">Click any preset question below or type custom queries</span>
+    </div>
+
+    <div class="qa-chips">
+      <span class="chip" onclick="askQuestion('How many mine incidents of the type you are working on have happened up until now?')">📊 How many incidents happened?</span>
+      <span class="chip" onclick="askQuestion('What were the reasons and number of incidents of each respective reason?')">🔍 Reasons & Incident Counts</span>
+      <span class="chip" onclick="askQuestion('What was the worst coal mine explosion disaster?')">💥 Deadliest Explosion Disaster</span>
+      <span class="chip" onclick="askQuestion('Tell me about Chhatarpur Mine No. 1')">⛏️ Chhatarpur Firedamp Blast</span>
+      <span class="chip" onclick="askQuestion('Tell me about Ramagundam OC-I')">💣 Ramagundam Secondary Blast</span>
+      <span class="chip" onclick="askQuestion('What regulations of Coal Mines Regulations were violated?')">⚖️ CMR Violations Cited</span>
+      <span class="chip" onclick="askQuestion('Give the company-wise breakdown of explosion incidents')">🏢 Company Breakdown</span>
+      <span class="chip" onclick="askQuestion('What are the courts of inquiry for explosions?')">📜 Courts of Inquiry</span>
+      <span class="chip" onclick="askQuestion('What are the scientific flammability limits and Coward diagram criteria?')">🔬 Coward Diagram & Limits</span>
+    </div>
+
+    <div class="qa-input-box">
+      <input type="text" id="qaInput" class="qa-input" placeholder="Ask any question (e.g. What were the reasons and number of incidents? What happened at Chhatarpur? CMR regulations?)..." onkeydown="if(event.key==='Enter') executeQA()">
+      <button class="qa-btn" onclick="executeQA()">Ask Assistant</button>
+    </div>
+
+    <div id="qaResponse" class="qa-response-card">
+      <div id="qaMarkdown" class="markdown-body"></div>
+    </div>
+  </section>
+
+  <!-- Charts Section -->
+  <div class="charts-grid">
+    <div class="chart-box">
+      <h3><span>📊 Fatal Incidents by Operational Root Cause (2016–2022)</span></h3>
+      <canvas id="causeChart" height="230"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3><span>🏢 Fatalities by Coal Mining Company / Subsidiary</span></h3>
+      <canvas id="companyChart" height="230"></canvas>
+    </div>
+  </div>
+
+    <div class="tabs-header-wrapper" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+      <div class="tabs-header" style="border-bottom: none; margin-bottom: 0;">
+        <button class="tab-btn active" onclick="switchTab('tab-causes', this)">Root Cause Taxonomy (6)</button>
+        <button class="tab-btn" onclick="switchTab('tab-recent', this)">Recent In-Depth Cases (19)</button>
+        <button class="tab-btn" onclick="switchTab('tab-historical', this)">Historical Major Disasters (48)</button>
+        <button class="tab-btn" onclick="switchTab('tab-inquiries', this)">Courts of Inquiry (19)</button>
+      </div>
+      <div>
+        <input type="text" id="tableFilterInput" placeholder="🔍 Instant search in table..." oninput="filterActiveTable()" style="background: #0b1120; border: 1px solid #2e3e5c; border-radius: 8px; padding: 8px 14px; color: #fff; font-size: 13px; outline: none; width: 260px;">
+      </div>
+    </div>
+
+    <!-- Tab 1: Root Causes -->
+    <div id="tab-causes" class="tab-content active">
+      <div class="data-table-container">
+        <table class="data-table" id="causesTable">
+          <thead>
+            <tr>
+              <th>Operational Cause Category</th>
+              <th>Fatal Incidents</th>
+              <th>Total Deaths</th>
+              <th>Physical Failure Mechanism</th>
+              <th>Key Regulations Violated</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 2: Recent Cases -->
+    <div id="tab-recent" class="tab-content">
+      <div class="data-table-container">
+        <table class="data-table" id="recentTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Mine Name</th>
+              <th>Company</th>
+              <th>Cause Category</th>
+              <th>DGMS Code</th>
+              <th>Killed</th>
+              <th>Injured</th>
+              <th>CMR Violations</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 3: Historical Disasters -->
+    <div id="tab-historical" class="tab-content">
+      <div class="data-table-container">
+        <table class="data-table" id="historicalTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Mine Name</th>
+              <th>Coalfield / State</th>
+              <th>Fatalities</th>
+              <th>Injuries</th>
+              <th>Official Cause Recorded</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 4: Inquiries -->
+    <div id="tab-inquiries" class="tab-content">
+      <div class="data-table-container">
+        <table class="data-table" id="inquiriesTable">
+          <thead>
+            <tr>
+              <th>Inq #</th>
+              <th>Date</th>
+              <th>Mine Name</th>
+              <th>Killed</th>
+              <th>Court President</th>
+              <th>Appointed Technical Assessors</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>Mining Engineering Department • Mine Environment & Safety Intelligence System • Source: DGMS SANKET Publication (2016–2022)</p>
+  </footer>
+
+</div>
+
+<script>
+  let cachedData = null;
+
+  async function loadData() {
+    try {
+      const res = await fetch('/api/data');
+      cachedData = await res.json();
+      
+      // Dynamically sync KPI counters
+      if (cachedData.historical) {
+        document.getElementById('kpi-hist-count').innerText = cachedData.historical.length;
+        const totalHistKilled = cachedData.historical.reduce((sum, h) => sum + (h.killed || 0), 0);
+        document.getElementById('kpi-hist-killed').innerText = totalHistKilled.toLocaleString();
+      }
+      if (cachedData.causes) {
+        document.getElementById('kpi-cause-count').innerText = cachedData.causes.length;
+      }
+      if (cachedData.recent) {
+        document.getElementById('kpi-rec-count').innerText = cachedData.recent.length;
+      }
+      if (cachedData.inquiries) {
+        document.getElementById('kpi-inq-count').innerText = cachedData.inquiries.length;
+      }
+
+      populateTables(cachedData);
+      renderCharts(cachedData);
+    } catch (e) {
+      console.error("Failed to load initial data:", e);
+    }
+  }
+
+  function populateTables(data) {
+    // Populate Causes
+    const causesTbody = document.querySelector('#causesTable tbody');
+    causesTbody.innerHTML = '';
+    data.causes.forEach(c => {
+      causesTbody.innerHTML += `
+        <tr>
+          <td><strong style="color: #f1f5f9;">${c.category}</strong></td>
+          <td><span class="badge red">${c.fatal_incidents} Incidents</span></td>
+          <td><strong style="color: #f87171;">${c.total_deaths} Deaths</strong></td>
+          <td style="color: #cbd5e1; font-size: 12px;">${c.key_mechanism}</td>
+          <td><code style="color: #38bdf8; font-size: 11px;">${c.primary_regulations}</code></td>
+        </tr>
+      `;
+    });
+
+    // Populate Recent
+    const recTbody = document.querySelector('#recentTable tbody');
+    recTbody.innerHTML = '';
+    data.recent.forEach(r => {
+      recTbody.innerHTML += `
+        <tr>
+          <td>${r.date}</td>
+          <td><strong>${r.mine_name}</strong></td>
+          <td><span class="badge blue">${r.company}</span></td>
+          <td>${r.root_cause_category}</td>
+          <td><code>${r.cause_code}</code></td>
+          <td><span class="badge red">${r.killed}</span></td>
+          <td>${r.injured}</td>
+          <td style="font-size: 11px; max-width: 250px;"><code>${r.cmr_violations || 'N/A'}</code></td>
+        </tr>
+      `;
+    });
+
+    // Populate Historical
+    const histTbody = document.querySelector('#historicalTable tbody');
+    histTbody.innerHTML = '';
+    data.historical.forEach(h => {
+      histTbody.innerHTML += `
+        <tr>
+          <td>${h.date}</td>
+          <td><strong>${h.mine_name}</strong></td>
+          <td>${h.coalfield_state}</td>
+          <td><span class="badge red">${h.killed}</span></td>
+          <td>${h.injured}</td>
+          <td>${h.official_cause}</td>
+          <td><span class="badge amber">${h.disaster_type}</span></td>
+        </tr>
+      `;
+    });
+
+    // Populate Inquiries
+    const inqTbody = document.querySelector('#inquiriesTable tbody');
+    inqTbody.innerHTML = '';
+    data.inquiries.forEach(i => {
+      inqTbody.innerHTML += `
+        <tr>
+          <td>#${i.inq_no}</td>
+          <td>${i.date}</td>
+          <td><strong>${i.mine_name}</strong></td>
+          <td><span class="badge red">${i.killed}</span></td>
+          <td>${i.president}</td>
+          <td style="font-size: 12px; color: #cbd5e1;">${i.assessors}</td>
+        </tr>
+      `;
+    });
+  }
+
+  function renderCharts(data) {
+    // Cause Chart
+    const causeLabels = data.causes.map(c => c.category);
+    const causeCounts = data.causes.map(c => c.fatal_incidents);
+    const causeDeaths = data.causes.map(c => c.total_deaths);
+
+    new Chart(document.getElementById('causeChart'), {
+      type: 'bar',
+      data: {
+        labels: causeLabels.map(l => l.length > 25 ? l.substring(0, 25) + '...' : l),
+        datasets: [
+          {
+            label: 'Fatal Incidents',
+            data: causeCounts,
+            backgroundColor: '#f59e0b',
+            borderRadius: 6
+          },
+          {
+            label: 'Total Deaths',
+            data: causeDeaths,
+            backgroundColor: '#ef4444',
+            borderRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { labels: { color: '#94a3b8' } }
+        },
+        scales: {
+          x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } },
+          y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+        }
+      }
+    });
+
+    // Company Chart
+    const compLabels = data.companies.map(c => c.company);
+    const compDeaths = data.companies.map(c => c.deaths);
+
+    new Chart(document.getElementById('companyChart'), {
+      type: 'doughnut',
+      data: {
+        labels: compLabels,
+        datasets: [{
+          data: compDeaths,
+          backgroundColor: ['#f59e0b', '#ef4444', '#06b6d4', '#10b981', '#8b5cf6', '#ec4899', '#64748b']
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'right', labels: { color: '#94a3b8' } }
+        }
+      }
+    });
+  }
+
+  async function executeQA() {
+    const input = document.getElementById('qaInput');
+    const query = input.value.trim();
+    if (!query) return;
+
+    const resCard = document.getElementById('qaResponse');
+    const mdContainer = document.getElementById('qaMarkdown');
+
+    resCard.classList.add('active');
+    mdContainer.innerHTML = '<p style="color: var(--accent-amber);">⚡ Searching SQLite Database & Analyzing DGMS Findings...</p>';
+
+    try {
+      const res = await fetch(`/api/ask?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      mdContainer.innerHTML = marked.parse(data.markdown || 'No response found.');
+    } catch (e) {
+      mdContainer.innerHTML = `<p style="color: #ef4444;">Error retrieving answer: ${e.message}</p>`;
+    }
+  }
+
+  function askQuestion(q) {
+    document.getElementById('qaInput').value = q;
+    executeQA();
+  }
+
+  function switchTab(tabId, el) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+    if (el) {
+      el.classList.add('active');
+    } else if (window.event && window.event.target) {
+      window.event.target.classList.add('active');
+    }
+    const target = document.getElementById(tabId);
+    if (target) target.classList.add('active');
+
+    filterActiveTable();
+  }
+
+  function filterActiveTable() {
+    const q = (document.getElementById('tableFilterInput')?.value || '').toLowerCase().trim();
+    const activeContent = document.querySelector('.tab-content.active');
+    if (!activeContent) return;
+    const rows = activeContent.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+      const text = row.innerText.toLowerCase();
+      if (!q || text.includes(q)) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  }
+
+  window.onload = loadData;
+</script>
+
+</body>
+</html>
