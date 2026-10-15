@@ -168,15 +168,53 @@ When the professor asks: *"What were the reasons and number of incidents of each
 
 ---
 
-## 8. How to Demonstrate the Interactive System to the Professor
+## 8. Demonstrating the Conversational AI Agent to the Professor
 
-1. **Option A: Web Dashboard (Visual & Interactive):**
-   - Run `python server.py` in the terminal.
+When your professor asks you to demonstrate the AI chat agent reading the SANKET PDF data like an LLM:
+
+### Scenario A: Transferred Worker Safety Advisory
+> **Prompt to Type in Dashboard or CLI (`W`):**  
+> *"I am a driller transferred to Kurasia Colliery. What dangers am I exposed to and what should I check?"*
+>
+> **What the Chatbot Tells the Worker:**
+> 1. **Colliery History:** Explains the 24.06.2020 fatal explosion at Kurasia where a rotary drill struck a misfired shothole from a previous shift.
+> 2. **Operational Dangers for Drillers:** Unexploded emulsion cartridges in face sockets (CMR Reg 204), frictional ignition of methane from tungsten carbide drill bits (>1000°C), and respirable coal dust inhalation.
+> 3. **5-Step Pre-Shift Face Checklist:** Multi-gas detector check (CH4, CO, O2), washing face butts and probing with non-ferrous brass rods, checking auxiliary ducting within 3.0 m of face (CMR Reg 153), checking stone dusting within 90 m (CMR Reg 136), and verifying self-rescuer seals.
+
+### Scenario B: Project Manager / Engineer Operational Revisit Plan
+> **Prompt to Type in Dashboard or CLI (`R`):**  
+> *"I am a project manager formulating an operational revisit and re-entry safety plan for the sealed-off district at Bagdewa Mine."*
+>
+> **What the Chatbot Formulates for the Engineer:**
+> 1. **Failure Precedent:** Cites the 16.12.2018 Bagdewa disaster where miners breached into an unventilated sealed section and suffocated in irrespirable blackdamp.
+> 2. **Phase 1: Pre-Entry Atmospheric Diagnostics:** Remote borehole sampling behind stopings, analyzing O2, CO, CH4, CO2, calculating Graham's Ratio ($R < 0.4$ normal, $R > 2.0$ active fire), manometer pressure differential.
+> 3. **Phase 2: CMR Reg 153 Ventilation Restoration:** Surface Main Mechanical Ventilator check ($\ge 6\text{ m}^3/\text{min/person}$), flameproof auxiliary fan placement in fresh intake air at least 4.5 m outbye, controlled methane dilution ($\text{CH}_4 \le 0.75\%$ in return).
+> 4. **Phase 3: Strata & Ground Control:** SSR inspection, acoustic sounding, advance pilot boreholes ($\ge 3\text{ m}$) for water/gas inrush.
+> 5. **Phase 4: Explosion Barriers (CMR Reg 136):** Heavy stone dust barrier (390 kg/m² at 135–365 m) and light barrier (100 kg/m² at 45–110 m), verifying $\ge 75\%$ incombustible matter.
+> 6. **Phase 5: Rescue Standby & Export:** Mines Rescue Brigade with SCBA escort, statutory Form IV register, and one-click **"Download Revisit Plan (.md)"** export!
+
+---
+
+## 9. How to Launch and Demonstrate Live
+
+1. **Option A: Web Dashboard & AI Studio (Interactive & Visual):**
+   - Run in terminal:
+     ```bash
+     python server.py
+     ```
    - Open browser at `http://localhost:8000`.
-   - Click the chip: *"🔍 Reasons & Incident Counts"* or *"📊 How many incidents happened?"*.
-   - Show the live Chart.js bar graph of root causes and doughnut chart of company distribution.
-   - Use the live table search to filter *"Chhatarpur"* or *"Dhori"* instantly.
+   - Use the **Persona Selector Bar** to toggle between **👷 Worker Advisory**, **🛠️ Engineer Revisit Plan**, **⚖️ Statutory Auditor**, and **🔬 Science**.
+   - Click the context dropdowns to select any colliery (e.g. *Kurasia, Bagdewa, Chhatarpur, Ramagundam, Dhori*) or worker role.
+   - Click the **"📄 Download Revisit Plan (.md)"** button on any generated plan to present a formal document to your professor.
+   - Click **"⚙️ Inference Engine"** to show that it works **100% offline with zero cost**, or connect Google Gemini / Groq / OpenAI with your own key.
 
 2. **Option B: Terminal CLI (Zero Dependencies):**
-   - Run `python query_tool.py` in terminal.
-   - Press `1` for Total Counts, `2` for Reasons & Incident Breakdown, `3` for Worst Disasters, `4` for Chhatarpur Case, or type any custom query.
+   - Run in terminal:
+     ```bash
+     python query_tool.py
+     ```
+   - Press `W` for Worker Transfer Advisory mode.
+   - Press `R` for Project Manager Revisit Plan mode.
+   - Press `A` for Statutory CMR Audit.
+   - Press `1` to `9` for direct historical and cause-wise statistical lookups.
+

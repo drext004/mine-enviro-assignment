@@ -1,26 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DGMS Coal Mine Explosions & Safety Intelligence System</title>
+  <title>Sanket — AI Mining Safety Intelligence</title>
+  <link rel="icon" type="image/png" href="logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     :root {
-      --bg-dark: #090d16;
-      --card-bg: #111827;
-      --card-border: #1f293d;
-      --accent-amber: #f59e0b;
-      --accent-orange: #f97316;
-      --accent-cyan: #06b6d4;
-      --accent-emerald: #10b981;
-      --accent-red: #ef4444;
-      --text-main: #f3f4f6;
-      --text-muted: #9ca3af;
+      --bg-dark: #131314;
+      --sidebar-bg: #1e1f20;
+      --card-bg: #1e1f20;
+      --card-hover: #282a2c;
+      --card-border: #333538;
+      --input-bg: #1e1f20;
+      --gemini-blue: #8ab4f8;
+      --gemini-purple: #c58af9;
+      --gemini-amber: #f59e0b;
+      --text-primary: #e3e3e3;
+      --text-secondary: #9aa0a6;
+      --text-subtle: #5f6368;
+      --accent-gradient: linear-gradient(90deg, #4da3ff 0%, #8ab4f8 35%, #c58af9 70%, #f59e0b 100%);
     }
 
     * {
@@ -31,760 +38,1668 @@
 
     body {
       background-color: var(--bg-dark);
-      color: var(--text-main);
+      color: var(--text-primary);
       font-family: 'Inter', sans-serif;
-      line-height: 1.6;
-      padding: 24px;
-    }
-
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    header {
+      height: 100vh;
+      overflow: hidden;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 24px;
-      border-bottom: 1px solid var(--card-border);
-      margin-bottom: 28px;
     }
 
-    .header-title h1 {
-      font-size: 26px;
-      font-weight: 800;
-      background: linear-gradient(135deg, #f59e0b, #f97316, #ef4444);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    /* =================================================== */
+    /* SIDEBAR (Collapsible Gemini Style) */
+    /* =================================================== */
+    .sidebar {
+      width: 280px;
+      background-color: var(--sidebar-bg);
+      border-right: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 50;
+      overflow: hidden;
+    }
+
+    .sidebar.collapsed {
+      width: 68px;
+    }
+
+    .sidebar-header {
+      padding: 16px;
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .header-title p {
-      color: var(--text-muted);
-      font-size: 13px;
-      margin-top: 4px;
-    }
-
-    .badge-status {
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--accent-emerald);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      padding: 6px 14px;
-      border-radius: 9999px;
-      font-size: 12px;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .badge-status::before {
-      content: '';
-      width: 8px;
-      height: 8px;
-      background: var(--accent-emerald);
+    .btn-toggle-sidebar {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 20px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
-      box-shadow: 0 0 10px var(--accent-emerald);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
     }
 
-    /* KPI Grid */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 18px;
-      margin-bottom: 32px;
-    }
-
-    .kpi-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      padding: 20px;
-      border-radius: 14px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-    }
-    .kpi-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; height: 3px;
-      background: linear-gradient(90deg, var(--accent-amber), var(--accent-orange));
-    }
-    .kpi-card.cyan::before { background: linear-gradient(90deg, #06b6d4, #3b82f6); }
-    .kpi-card.red::before { background: linear-gradient(90deg, #ef4444, #f43f5e); }
-    .kpi-card.emerald::before { background: linear-gradient(90deg, #10b981, #059669); }
-
-    .kpi-val {
-      font-size: 32px;
-      font-weight: 800;
-      margin-top: 6px;
+    .btn-toggle-sidebar:hover {
+      background: rgba(255, 255, 255, 0.08);
       color: #fff;
     }
-    .kpi-lbl {
-      color: var(--text-muted);
-      font-size: 13px;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .kpi-sub {
-      font-size: 11px;
-      color: var(--accent-amber);
-      margin-top: 4px;
-    }
 
-    /* Interactive QA Section */
-    .qa-section {
-      background: linear-gradient(180deg, #141d30 0%, #101626 100%);
-      border: 1px solid #24324f;
-      border-radius: 16px;
-      padding: 28px;
-      margin-bottom: 36px;
-      box-shadow: 0 20px 30px -10px rgba(0,0,0,0.5);
-    }
-
-    .qa-header {
+    .btn-new-chat {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 18px;
+      gap: 10px;
+      background: #282a2c;
+      border: 1px solid var(--card-border);
+      color: var(--text-primary);
+      padding: 10px 16px;
+      border-radius: 24px;
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      margin: 0 16px 16px;
+      transition: all 0.2s;
+      white-space: nowrap;
     }
-    .qa-header h2 {
-      font-size: 20px;
+
+    .btn-new-chat:hover {
+      background: #333538;
+      border-color: #4a4d52;
+    }
+
+    .sidebar.collapsed .btn-new-chat {
+      padding: 10px;
+      margin: 0 14px 16px;
+      justify-content: center;
+    }
+
+    .sidebar.collapsed .btn-new-chat span {
+      display: none;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 12px;
+    }
+
+    .sidebar-section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-subtle);
+      font-weight: 600;
+      padding: 8px 12px;
+      white-space: nowrap;
+    }
+
+    .sidebar.collapsed .sidebar-section-title {
+      display: none;
+    }
+
+    .recent-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+
+    .recent-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-primary);
+    }
+
+    .recent-item.active {
+      background: rgba(138, 180, 248, 0.12);
+      color: var(--gemini-blue);
+      font-weight: 500;
+    }
+
+    .sidebar-footer {
+      padding: 14px 16px;
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn-sidebar-footer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .btn-sidebar-footer:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-primary);
+    }
+
+    .sidebar.collapsed .btn-sidebar-footer span {
+      display: none;
+    }
+
+    /* =================================================== */
+    /* MAIN CHAT CANVAS */
+    /* =================================================== */
+    .main-canvas {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+      background: radial-gradient(circle at 50% 15%, rgba(66, 133, 244, 0.04) 0%, transparent 60%);
+    }
+
+    /* Top Bar */
+    .top-bar {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      flex-shrink: 0;
+    }
+
+    .top-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .app-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
       font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-title span.badge-pill {
+      font-size: 11px;
+      background: rgba(138, 180, 248, 0.15);
+      color: var(--gemini-blue);
+      border: 1px solid rgba(138, 180, 248, 0.3);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+    }
+
+    .top-bar-right {
       display: flex;
       align-items: center;
       gap: 10px;
     }
 
-    .qa-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    .chip {
-      background: #1b263b;
-      color: #cbd5e1;
-      border: 1px solid #334155;
+    .btn-top {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
       padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 12px;
+      border-radius: 18px;
+      font-size: 12.5px;
+      font-weight: 500;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       transition: all 0.2s;
     }
-    .chip:hover {
-      background: var(--accent-amber);
-      color: #000;
-      font-weight: 600;
-      border-color: var(--accent-amber);
+
+    .btn-top:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
     }
 
-    .qa-input-box {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 20px;
+    .btn-top.analytics {
+      background: linear-gradient(135deg, rgba(77, 163, 255, 0.15), rgba(197, 138, 249, 0.15));
+      border-color: rgba(138, 180, 248, 0.3);
+      color: var(--gemini-blue);
     }
-    .qa-input {
+
+    /* Chat Messages Container */
+    .chat-scroll-area {
       flex: 1;
-      background: #0b1120;
-      border: 1px solid #2e3e5c;
-      border-radius: 10px;
-      padding: 14px 18px;
-      color: #fff;
-      font-size: 15px;
-      outline: none;
-      transition: border 0.2s;
+      overflow-y: auto;
+      padding: 24px 20px 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    .qa-input:focus {
-      border-color: var(--accent-amber);
-      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+
+    .chat-content-width {
+      width: 100%;
+      max-width: 820px;
     }
-    .qa-btn {
-      background: linear-gradient(135deg, var(--accent-amber), var(--accent-orange));
-      color: #111;
+
+    /* Gemini Centered Welcome Hero (Empty State) */
+    .hero-welcome {
+      text-align: left;
+      padding: 40px 0 28px;
+    }
+
+    .hero-greeting {
+      font-family: 'Outfit', sans-serif;
+      font-size: 44px;
       font-weight: 700;
-      border: none;
-      padding: 0 28px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: transform 0.1s, opacity 0.2s;
-    }
-    .qa-btn:hover {
-      opacity: 0.95;
-      transform: translateY(-1px);
-    }
-
-    .qa-response-card {
-      background: #0b1120;
-      border: 1px solid #1e293b;
-      border-radius: 12px;
-      padding: 24px;
-      display: none;
-      margin-top: 16px;
-    }
-    .qa-response-card.active {
-      display: block;
-      animation: fadeIn 0.3s ease-in-out;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Markdown Output Styles */
-    .markdown-body h3 {
-      font-size: 18px;
-      color: var(--accent-amber);
-      margin-bottom: 12px;
-      border-bottom: 1px solid #24324f;
-      padding-bottom: 6px;
-    }
-    .markdown-body h4 {
-      font-size: 16px;
-      color: var(--accent-cyan);
-      margin-top: 16px;
+      line-height: 1.15;
+      color: #3da8ff;
       margin-bottom: 8px;
     }
-    .markdown-body p, .markdown-body ul, .markdown-body ol {
-      margin-bottom: 12px;
-      font-size: 14px;
-      color: #cbd5e1;
+
+    /* .hero-greeting .gradient-text {
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    } */
+    .hero-subtitle {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 400;
+      color: #5f6368;
+      line-height: 1.25;
+      margin-bottom: 32px;
     }
-    .markdown-body ul { padding-left: 20px; }
-    .markdown-body li { margin-bottom: 6px; }
-    .markdown-body table {
+
+    /* Gemini Suggestion Cards Grid */
+    .suggestion-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .suggestion-card {
+      background: #1e1f20;
+      border: 1px solid var(--card-border);
+      padding: 16px;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 130px;
+    }
+
+    .suggestion-card:hover {
+      background: var(--card-hover);
+      border-color: #4a4d52;
+      transform: translateY(-2px);
+    }
+
+    .suggestion-card p {
+      font-size: 13px;
+      color: var(--text-primary);
+      line-height: 1.45;
+      font-weight: 500;
+    }
+
+    .suggestion-icon {
+      align-self: flex-end;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      margin-top: 12px;
+    }
+
+    /* Chat Messages Stream */
+    .messages-stream {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      width: 100%;
+    }
+
+    .msg-row {
+      display: flex;
+      gap: 16px;
+      width: 100%;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+
+    .msg-row.user {
+      justify-content: flex-end;
+    }
+
+    .msg-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .msg-row.agent .msg-icon {
+      background: #1e1f20;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      padding: 5px;
+    }
+
+    .msg-row.agent .msg-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .msg-row.user .msg-icon {
+      background: #333538;
+      display: none;
+      /* Gemini hides user avatar */
+    }
+
+    .msg-body {
+      max-width: 100%;
+      line-height: 1.6;
+    }
+
+    .msg-row.user .msg-body {
+      background: #282a2c;
+      padding: 12px 20px;
+      border-radius: 20px;
+      max-width: 80%;
+      color: #fff;
+      font-size: 14.5px;
+    }
+
+    .msg-row.agent .msg-body {
+      flex: 1;
+      color: #e3e3e3;
+      font-size: 14.5px;
+    }
+
+    /* Markdown styling inside responses */
+    .msg-body h1,
+    .msg-body h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      color: #fff;
+      margin: 16px 0 10px;
+      font-weight: 600;
+    }
+
+    .msg-body h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      color: var(--gemini-blue);
+      margin: 16px 0 8px;
+      font-weight: 600;
+    }
+
+    .msg-body p {
+      margin-bottom: 12px;
+    }
+
+    .msg-body ul,
+    .msg-body ol {
+      margin-bottom: 12px;
+      padding-left: 22px;
+    }
+
+    .msg-body li {
+      margin-bottom: 6px;
+    }
+
+    .msg-body table {
       width: 100%;
       border-collapse: collapse;
       margin: 16px 0;
       font-size: 13px;
     }
-    .markdown-body th, .markdown-body td {
-      border: 1px solid #23314d;
-      padding: 10px 12px;
+
+    .msg-body th,
+    .msg-body td {
+      border: 1px solid var(--card-border);
+      padding: 8px 12px;
       text-align: left;
     }
-    .markdown-body th {
-      background: #172136;
+
+    .msg-body th {
+      background: #1e1f20;
       color: #f1f5f9;
       font-weight: 600;
     }
-    .markdown-body tr:nth-child(even) { background: rgba(255,255,255,0.02); }
-    .markdown-body blockquote {
-      border-left: 3px solid var(--accent-amber);
+
+    .msg-body tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .msg-body blockquote {
+      border-left: 3px solid var(--gemini-amber);
       background: rgba(245, 158, 11, 0.08);
-      padding: 10px 16px;
+      padding: 10px 14px;
       border-radius: 0 8px 8px 0;
       margin: 12px 0;
       color: #fde68a;
       font-size: 13px;
     }
-    .markdown-body code {
-      background: #1e293b;
-      color: #38bdf8;
+
+    .msg-body code {
+      background: #282a2c;
+      color: #8ab4f8;
       padding: 2px 6px;
       border-radius: 4px;
       font-family: 'JetBrains Mono', monospace;
       font-size: 12px;
     }
 
-    /* Charts Layout */
-    .charts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-      gap: 24px;
-      margin-bottom: 36px;
-    }
-    .chart-box {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 22px;
-    }
-    .chart-box h3 {
-      font-size: 16px;
-      font-weight: 700;
-      margin-bottom: 16px;
-      color: #e2e8f0;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    /* Tabs Section */
-    .tabs-header {
+    /* Message Actions */
+    .msg-actions {
       display: flex;
       gap: 10px;
-      border-bottom: 1px solid var(--card-border);
-      margin-bottom: 20px;
+      margin-top: 14px;
+      align-items: center;
     }
+
+    .btn-msg-action {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--text-secondary);
+      padding: 5px 12px;
+      border-radius: 14px;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+
+    .btn-msg-action:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .btn-msg-action.export {
+      background: rgba(138, 180, 248, 0.12);
+      border-color: rgba(138, 180, 248, 0.3);
+      color: var(--gemini-blue);
+      font-weight: 500;
+    }
+
+    .btn-msg-action.export:hover {
+      background: var(--gemini-blue);
+      color: #000;
+    }
+
+    /* =================================================== */
+    /* FLOATING BOTTOM PROMPT BAR (Gemini Signature UI) */
+    /* =================================================== */
+    .bottom-dock {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0 20px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: linear-gradient(180deg, transparent 0%, #131314 40%);
+      pointer-events: none;
+    }
+
+    .dock-container {
+      width: 100%;
+      max-width: 820px;
+      pointer-events: auto;
+    }
+
+    .prompt-box {
+      background: #1e1f20;
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .prompt-box:focus-within {
+      border-color: #55585d;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    }
+
+    .colliery-pill-btn {
+      background: #282a2c;
+      border: 1px solid var(--card-border);
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .colliery-pill-btn:hover {
+      background: #333538;
+      color: #fff;
+    }
+
+    .prompt-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .prompt-input::placeholder {
+      color: var(--text-subtle);
+    }
+
+    .btn-send-round {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--text-primary);
+      color: #131314;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.2s, background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .btn-send-round:hover {
+      background: #fff;
+      transform: scale(1.05);
+    }
+
+    .btn-send-round:disabled {
+      background: #333538;
+      color: #5f6368;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .dock-disclaimer {
+      text-align: center;
+      font-size: 11.5px;
+      color: var(--text-subtle);
+      margin-top: 10px;
+    }
+
+    /* =================================================== */
+    /* SLIDE-OVER ANALYTICS DRAWER & DISASTER REGISTERS */
+    /* =================================================== */
+    .drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 200;
+      display: none;
+      backdrop-filter: blur(4px);
+    }
+
+    .drawer-overlay.active {
+      display: block;
+    }
+
+    .drawer-panel {
+      position: fixed;
+      top: 0;
+      right: -850px;
+      bottom: 0;
+      width: 850px;
+      max-width: 95vw;
+      background: #18191b;
+      border-left: 1px solid var(--card-border);
+      z-index: 210;
+      transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      box-shadow: -20px 0 50px rgba(0, 0, 0, 0.7);
+    }
+
+    .drawer-panel.open {
+      right: 0;
+    }
+
+    .drawer-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .drawer-header h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .btn-close-drawer {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 24px;
+      cursor: pointer;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .btn-close-drawer:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    /* KPI Mini Cards inside Drawer */
+    .drawer-kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .mini-kpi {
+      background: #1e1f20;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .mini-kpi-val {
+      font-size: 24px;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      color: #fff;
+    }
+
+    .mini-kpi-lbl {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    /* Drawer Tables */
+    .tabs-header {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
     .tab-btn {
       background: transparent;
       border: none;
-      color: var(--text-muted);
-      font-size: 14px;
+      color: var(--text-secondary);
+      font-size: 13px;
       font-weight: 600;
-      padding: 12px 18px;
+      padding: 8px 14px;
       cursor: pointer;
       border-bottom: 2px solid transparent;
       transition: all 0.2s;
     }
-    .tab-btn.active {
-      color: var(--accent-amber);
-      border-bottom-color: var(--accent-amber);
-    }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
 
-    /* Data Tables */
+    .tab-btn:hover {
+      color: #fff;
+    }
+
+    .tab-btn.active {
+      color: var(--gemini-blue);
+      border-bottom: 2px solid var(--gemini-blue);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
     .data-table-container {
-      background: var(--card-bg);
+      background: #1e1f20;
       border: 1px solid var(--card-border);
       border-radius: 12px;
       overflow-x: auto;
+      max-height: 480px;
     }
-    table.data-table {
+
+    .data-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
-    }
-    table.data-table th, table.data-table td {
-      padding: 12px 16px;
-      border-bottom: 1px solid #1a2436;
+      font-size: 12.5px;
       text-align: left;
     }
-    table.data-table th {
-      background: #0d1424;
-      color: #94a3b8;
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 11px;
-      letter-spacing: 0.5px;
-    }
-    table.data-table tr:hover {
-      background: rgba(245, 158, 11, 0.04);
-    }
-    .badge {
-      display: inline-block;
-      padding: 3px 8px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-    .badge.red { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-    .badge.amber { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .badge.blue { background: rgba(6, 182, 212, 0.2); color: #38bdf8; border: 1px solid rgba(6, 182, 212, 0.3); }
 
-    footer {
-      margin-top: 48px;
-      padding-top: 20px;
-      border-top: 1px solid var(--card-border);
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 12px;
+    .data-table th,
+    .data-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .data-table th {
+      background: #252628;
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .data-table tr:hover td {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .badge-pill-tag {
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-pill-tag.red {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+
+    .badge-pill-tag.blue {
+      background: rgba(138, 180, 248, 0.15);
+      color: #8ab4f8;
+    }
+
+    .badge-pill-tag.amber {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+    }
+
+    /* Modal for Quick Mine Picker */
+    .mine-picker-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 300;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .mine-picker-modal.active {
+      display: flex;
+    }
+
+    .mine-picker-card {
+      background: #1e1f20;
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      width: 520px;
+      max-width: 90%;
+      padding: 24px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7);
+    }
+
+    .mine-picker-card h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .mine-picker-input {
+      width: 100%;
+      background: #131314;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 14px;
+      outline: none;
+    }
+
+    .mine-picker-list {
+      max-height: 280px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .mine-picker-item {
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      transition: background 0.15s;
+    }
+
+    .mine-picker-item:hover {
+      background: #282a2c;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   </style>
 </head>
+
 <body>
 
-<div class="container">
-
-  <!-- Header -->
-  <header>
-    <div class="header-title">
-      <h1>💥 DGMS Mine Explosions & Safety Intelligence</h1>
-      <p>Official Analytics, Regulatory Root-Causes & Q&A Assistant based on SANKET (2016–2022)</p>
-    </div>
-    <div>
-      <span class="badge-status">SQLite Database Connected</span>
-    </div>
-  </header>
-
-  <!-- KPI Cards -->
-  <div class="kpi-grid">
-    <div class="kpi-card red">
-      <div class="kpi-lbl">Historical Disasters</div>
-      <div class="kpi-val" id="kpi-hist-count">48</div>
-      <div class="kpi-sub">Major Disasters (≥4 Deaths, 1901–2022)</div>
-    </div>
-    <div class="kpi-card red">
-      <div class="kpi-lbl">Disaster Fatalities</div>
-      <div class="kpi-val" id="kpi-hist-killed">1,361</div>
-      <div class="kpi-sub">Miners Killed in Major Disasters</div>
-    </div>
-    <div class="kpi-card emerald">
-      <div class="kpi-lbl">Root Cause Categories</div>
-      <div class="kpi-val" id="kpi-cause-count">6</div>
-      <div class="kpi-sub">Operational Failure Taxonomies</div>
-    </div>
-    <div class="kpi-card cyan">
-      <div class="kpi-lbl">Recent Detailed Cases</div>
-      <div class="kpi-val" id="kpi-rec-count">19</div>
-      <div class="kpi-sub">In-Depth Inquiries (2016–2022)</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-lbl">Courts of Inquiry</div>
-      <div class="kpi-val" id="kpi-inq-count">19</div>
-      <div class="kpi-sub">Mines Act Inquiries for Explosions</div>
-    </div>
-  </div>
-
-  <!-- Interactive QA Section (Star Feature) -->
-  <section class="qa-section">
-    <div class="qa-header">
-      <h2>🧠 Professor Q&A Assistant (Zero-Hallucination Query Engine)</h2>
-      <span style="font-size: 12px; color: #94a3b8;">Click any preset question below or type custom queries</span>
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <button class="btn-toggle-sidebar" onclick="toggleSidebar()" title="Collapse sidebar">☰</button>
     </div>
 
-    <div class="qa-chips">
-      <span class="chip" onclick="askQuestion('How many mine incidents of the type you are working on have happened up until now?')">📊 How many incidents happened?</span>
-      <span class="chip" onclick="askQuestion('What were the reasons and number of incidents of each respective reason?')">🔍 Reasons & Incident Counts</span>
-      <span class="chip" onclick="askQuestion('What was the worst coal mine explosion disaster?')">💥 Deadliest Explosion Disaster</span>
-      <span class="chip" onclick="askQuestion('Tell me about Chhatarpur Mine No. 1')">⛏️ Chhatarpur Firedamp Blast</span>
-      <span class="chip" onclick="askQuestion('Tell me about Ramagundam OC-I')">💣 Ramagundam Secondary Blast</span>
-      <span class="chip" onclick="askQuestion('What regulations of Coal Mines Regulations were violated?')">⚖️ CMR Violations Cited</span>
-      <span class="chip" onclick="askQuestion('Give the company-wise breakdown of explosion incidents')">🏢 Company Breakdown</span>
-      <span class="chip" onclick="askQuestion('What are the courts of inquiry for explosions?')">📜 Courts of Inquiry</span>
-      <span class="chip" onclick="askQuestion('What are the scientific flammability limits and Coward diagram criteria?')">🔬 Coward Diagram & Limits</span>
-    </div>
+    <button class="btn-new-chat" onclick="startNewChat()">
+      <span style="font-size: 18px;">+</span>
+      <span>New chat</span>
+    </button>
 
-    <div class="qa-input-box">
-      <input type="text" id="qaInput" class="qa-input" placeholder="Ask any question (e.g. What were the reasons and number of incidents? What happened at Chhatarpur? CMR regulations?)..." onkeydown="if(event.key==='Enter') executeQA()">
-      <button class="qa-btn" onclick="executeQA()">Ask Assistant</button>
-    </div>
-
-    <div id="qaResponse" class="qa-response-card">
-      <div id="qaMarkdown" class="markdown-body"></div>
-    </div>
-  </section>
-
-  <!-- Charts Section -->
-  <div class="charts-grid">
-    <div class="chart-box">
-      <h3><span>📊 Fatal Incidents by Operational Root Cause (2016–2022)</span></h3>
-      <canvas id="causeChart" height="230"></canvas>
-    </div>
-    <div class="chart-box">
-      <h3><span>🏢 Fatalities by Coal Mining Company / Subsidiary</span></h3>
-      <canvas id="companyChart" height="230"></canvas>
-    </div>
-  </div>
-
-    <div class="tabs-header-wrapper" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-      <div class="tabs-header" style="border-bottom: none; margin-bottom: 0;">
-        <button class="tab-btn active" onclick="switchTab('tab-causes', this)">Root Cause Taxonomy (6)</button>
-        <button class="tab-btn" onclick="switchTab('tab-recent', this)">Recent In-Depth Cases (19)</button>
-        <button class="tab-btn" onclick="switchTab('tab-historical', this)">Historical Major Disasters (48)</button>
-        <button class="tab-btn" onclick="switchTab('tab-inquiries', this)">Courts of Inquiry (19)</button>
+    <div class="sidebar-nav">
+      <div class="sidebar-section-title">Common Safety Queries</div>
+      <div class="recent-item"
+        onclick="quickSend('I am a driller transferred to Kurasia Colliery. What dangers am I exposed to and what are my pre-shift safety checks?')">
+        <span>Kurasia Driller Transfer</span>
       </div>
+      <div class="recent-item"
+        onclick="quickSend('Formulate an operational revisit and re-entry safety plan for the sealed-off district at Bagdewa Mine.')">
+        <span>Bagdewa Revisit Plan</span>
+      </div>
+      <div class="recent-item"
+        onclick="quickSend('What were the reasons and number of incidents of each respective reason in SANKET?')">
+        <span>Root Causes & Counts</span>
+      </div>
+      <div class="recent-item" onclick="quickSend('What was the worst coal mine explosion disaster in India?')">
+        <span>Dhori Disaster (268 killed)</span>
+      </div>
+      <div class="recent-item"
+        onclick="quickSend('Explain Coward flammability diagram, nose point, and explosive limits of methane.')">
+        <span>Coward Diagram & Limits</span>
+      </div>
+      <div class="recent-item"
+        onclick="quickSend('What regulations of Coal Mines Regulations (CMR 2017) were violated in explosion incidents?')">
+        <span>CMR 2017 Violations</span>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="btn-sidebar-footer" onclick="openDrawer()">
+        <span>View Registers & Charts</span>
+      </button>
+      <button class="btn-sidebar-footer" onclick="openSettingsModal()">
+        <span id="lblCurrentEngine">Engine: Offline Expert</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CHAT CANVAS -->
+  <main class="main-canvas">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <div class="app-title" style="display: flex; align-items: center; gap: 10px;">
+          <img src="logo.png" alt="Sanket Logo" style="width: 22px; height: 22px; object-fit: contain; display: block;">
+          <span>Sanket</span>
+          <span class="badge-pill">AI Mining Safety</span>
+        </div>
+      </div>
+      <div class="top-bar-right">
+        <button class="btn-top analytics" onclick="openDrawer()">
+          <span>View Registers & KPIs</span>
+        </button>
+        <button class="btn-top" onclick="openSettingsModal()">
+          <span>Settings</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Chat Scroll Area -->
+    <div class="chat-scroll-area" id="chatScrollArea">
+      <div class="chat-content-width">
+        <!-- Empty State Hero Greeting (Gemini Style) -->
+        <div class="hero-welcome" id="heroWelcome">
+          <h1 class="hero-greeting"><span class="gradient-text">Hello,</span> Mining Engineer</h1>
+          <h2 class="hero-subtitle">How can I assist your safety audit or worker briefing today?</h2>
+
+          <div class="suggestion-grid">
+            <div class="suggestion-card"
+              onclick="quickSend('I am a driller transferred to Kurasia Colliery. What dangers am I exposed to and what are my pre-shift checks?')">
+              <p><strong>Worker Transfer Advisory</strong><br>Check hazards, misfire risks, and pre-shift checks at
+                Kurasia Colliery.</p>
+            </div>
+            <div class="suggestion-card"
+              onclick="quickSend('Formulate an operational revisit and re-entry safety plan for the sealed-off district at Bagdewa Mine.')">
+              <p><strong>Engineer Revisit Plan</strong><br>Formulate 5-phase atmospheric and CMR 153 re-entry plan for
+                Bagdewa.</p>
+            </div>
+            <div class="suggestion-card"
+              onclick="quickSend('What were the reasons and number of incidents of each respective reason in SANKET?')">
+              <p><strong>SANKET Root Causes</strong><br>Analyze all 6 operational failure taxonomies and incident
+                counts.</p>
+            </div>
+            <div class="suggestion-card"
+              onclick="quickSend('Explain Coward flammability diagram, nose point, and explosive limits of methane.')">
+              <p><strong>Explosion Science</strong><br>Methane LEL/UEL, stoichiometric ratio (9.5%), and stone dust
+                inerting.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Messages Stream -->
+        <div class="messages-stream" id="messagesStream" style="display: none;"></div>
+      </div>
+    </div>
+
+    <!-- Floating Bottom Prompt Dock -->
+    <div class="bottom-dock">
+      <div class="dock-container">
+        <div class="prompt-box">
+          <button class="colliery-pill-btn" onclick="openMinePicker()">
+            <span id="lblSelectedMine">Select Colliery</span>
+          </button>
+          <input type="text" id="promptInput" class="prompt-input"
+            placeholder="Ask Sanket anything (worker hazards, revisit plan, disaster data, CMR regulations)..."
+            onkeydown="if(event.key==='Enter') submitPrompt()">
+          <button class="btn-send-round" id="btnSend" onclick="submitPrompt()" title="Send query">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+        <div class="dock-disclaimer">
+          Sanket AI Assistant indexes 316 official publication pages (2016–2022). Verify operational re-entry plans
+          against CMR 2017 standards.
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- SLIDE-OVER ANALYTICS DRAWER & DISASTER REGISTERS -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="drawer-panel" id="drawerPanel">
+    <div class="drawer-header">
       <div>
-        <input type="text" id="tableFilterInput" placeholder="🔍 Instant search in table..." oninput="filterActiveTable()" style="background: #0b1120; border: 1px solid #2e3e5c; border-radius: 8px; padding: 8px 14px; color: #fff; font-size: 13px; outline: none; width: 260px;">
+        <h2>SANKET Safety Registers & Historical Disasters</h2>
+        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">120+ Years of Official Mining Safety
+          Records (1901–2022)</p>
       </div>
+      <button class="btn-close-drawer" onclick="closeDrawer()">&times;</button>
     </div>
 
-    <!-- Tab 1: Root Causes -->
-    <div id="tab-causes" class="tab-content active">
-      <div class="data-table-container">
-        <table class="data-table" id="causesTable">
-          <thead>
-            <tr>
-              <th>Operational Cause Category</th>
-              <th>Fatal Incidents</th>
-              <th>Total Deaths</th>
-              <th>Physical Failure Mechanism</th>
-              <th>Key Regulations Violated</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+    <div class="drawer-body">
+      <!-- Mini KPI Row -->
+      <div class="drawer-kpis">
+        <div class="mini-kpi">
+          <div class="mini-kpi-val" id="dkpi-hist-count">48</div>
+          <div class="mini-kpi-lbl">Major Disasters</div>
+        </div>
+        <div class="mini-kpi">
+          <div class="mini-kpi-val" id="dkpi-hist-killed">1,361</div>
+          <div class="mini-kpi-lbl">Miners Killed</div>
+        </div>
+        <div class="mini-kpi">
+          <div class="mini-kpi-val" id="dkpi-cause-count">6</div>
+          <div class="mini-kpi-lbl">Root Causes</div>
+        </div>
+        <div class="mini-kpi">
+          <div class="mini-kpi-val" id="dkpi-rec-count">19</div>
+          <div class="mini-kpi-lbl">Recent Cases</div>
+        </div>
+        <div class="mini-kpi">
+          <div class="mini-kpi-val" id="dkpi-inq-count">19</div>
+          <div class="mini-kpi-lbl">Courts of Inquiry</div>
+        </div>
+      </div>
+
+      <!-- Charts Area -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+        <div style="background: #1e1f20; padding: 14px; border-radius: 12px; border: 1px solid var(--card-border);">
+          <h4 style="font-size: 13px; margin-bottom: 10px; color: var(--text-secondary);">Incidents by Cause (2016–2022)
+          </h4>
+          <canvas id="drawerCauseChart" height="200"></canvas>
+        </div>
+        <div style="background: #1e1f20; padding: 14px; border-radius: 12px; border: 1px solid var(--card-border);">
+          <h4 style="font-size: 13px; margin-bottom: 10px; color: var(--text-secondary);">Fatalities by Company</h4>
+          <canvas id="drawerCompanyChart" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- Table Search & Tabs -->
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div class="tabs-header" style="margin-bottom: 0;">
+          <button class="tab-btn active" onclick="switchDrawerTab('tab-causes', this)">Root Causes (6)</button>
+          <button class="tab-btn" onclick="switchDrawerTab('tab-recent', this)">Recent Cases (19)</button>
+          <button class="tab-btn" onclick="switchDrawerTab('tab-historical', this)">Historical Disasters (48)</button>
+          <button class="tab-btn" onclick="switchDrawerTab('tab-inquiries', this)">Inquiries (19)</button>
+        </div>
+        <input type="text" id="drawerSearch" placeholder="Filter rows..." oninput="filterDrawerTable()"
+          style="background: #131314; border: 1px solid var(--card-border); padding: 6px 12px; border-radius: 8px; color: #fff; font-size: 12px; outline: none; width: 200px;">
+      </div>
+
+      <!-- Tab 1: Causes -->
+      <div id="tab-causes" class="tab-content active">
+        <div class="data-table-container">
+          <table class="data-table" id="drawerCausesTable">
+            <thead>
+              <tr>
+                <th>Operational Cause</th>
+                <th>Incidents</th>
+                <th>Deaths</th>
+                <th>Failure Mechanism</th>
+                <th>Regulations</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 2: Recent Cases -->
+      <div id="tab-recent" class="tab-content">
+        <div class="data-table-container">
+          <table class="data-table" id="drawerRecentTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Mine</th>
+                <th>Company</th>
+                <th>Cause Category</th>
+                <th>Killed</th>
+                <th>Violations</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 3: Historical Disasters -->
+      <div id="tab-historical" class="tab-content">
+        <div class="data-table-container">
+          <table class="data-table" id="drawerHistTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Mine Name</th>
+                <th>State / Field</th>
+                <th>Killed</th>
+                <th>Official Cause</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 4: Inquiries -->
+      <div id="tab-inquiries" class="tab-content">
+        <div class="data-table-container">
+          <table class="data-table" id="drawerInqTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Date</th>
+                <th>Mine Name</th>
+                <th>Killed</th>
+                <th>President</th>
+                <th>Assessors</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
+  </div>
 
-    <!-- Tab 2: Recent Cases -->
-    <div id="tab-recent" class="tab-content">
-      <div class="data-table-container">
-        <table class="data-table" id="recentTable">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Mine Name</th>
-              <th>Company</th>
-              <th>Cause Category</th>
-              <th>DGMS Code</th>
-              <th>Killed</th>
-              <th>Injured</th>
-              <th>CMR Violations</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+  <!-- QUICK COLLIERY PICKER MODAL -->
+  <div class="mine-picker-modal" id="minePickerModal" onclick="closeMinePicker(event)">
+    <div class="mine-picker-card" onclick="event.stopPropagation()">
+      <h3>
+        <span>Select Colliery from SANKET Database</span>
+        <button onclick="closeMinePicker()"
+          style="background:transparent; border:none; color:var(--text-secondary); font-size:20px; cursor:pointer;">&times;</button>
+      </h3>
+      <input type="text" id="mineSearchInput" class="mine-picker-input"
+        placeholder="Search mine (e.g. Kurasia, Bagdewa, Chhatarpur, Dhori)..." oninput="filterMinesList()">
+      <div class="mine-picker-list" id="minePickerList">
+        <!-- Populated dynamically -->
       </div>
     </div>
+  </div>
 
-    <!-- Tab 3: Historical Disasters -->
-    <div id="tab-historical" class="tab-content">
-      <div class="data-table-container">
-        <table class="data-table" id="historicalTable">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Mine Name</th>
-              <th>Coalfield / State</th>
-              <th>Fatalities</th>
-              <th>Injuries</th>
-              <th>Official Cause Recorded</th>
-              <th>Type</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+  <!-- INFERENCE ENGINE SETTINGS MODAL -->
+  <div class="mine-picker-modal" id="settingsModal" onclick="closeSettingsModal(event)">
+    <div class="mine-picker-card" onclick="event.stopPropagation()">
+      <h3>
+        <span>Inference Engine Settings</span>
+        <button onclick="closeSettingsModal()"
+          style="background:transparent; border:none; color:var(--text-secondary); font-size:20px; cursor:pointer;">&times;</button>
+      </h3>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+        The <strong>Offline Expert Engine</strong> runs 100% locally with zero external API key requirements. You can
+        also connect cloud LLM APIs.
+      </p>
+
+      <div style="margin-bottom: 16px;">
+        <label
+          style="font-size: 12px; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 6px;">Provider:</label>
+        <select id="cfgProvider" onchange="toggleApiKeyField()"
+          style="width: 100%; background: #131314; border: 1px solid var(--card-border); padding: 10px; border-radius: 8px; color: #fff; font-size: 13.5px; outline: none;">
+          <option value="offline">Built-in Offline Expert Engine (100% Free / Instant)</option>
+          <option value="gemini">Google Gemini API (gemini-2.5-flash)</option>
+          <option value="groq">Groq API (llama-3.3-70b-versatile)</option>
+          <option value="openai">OpenAI API (gpt-4o-mini)</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom: 16px; display: none;" id="apiKeyField">
+        <label id="lblApiKey"
+          style="font-size: 12px; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 6px;">API
+          Key:</label>
+        <input type="password" id="cfgApiKey" placeholder="Paste your API key here..."
+          style="width: 100%; background: #131314; border: 1px solid var(--card-border); padding: 10px; border-radius: 8px; color: #fff; font-size: 13.5px; outline: none;">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button class="btn-msg-action" onclick="closeSettingsModal()">Cancel</button>
+        <button class="btn-top" onclick="saveSettings()"
+          style="background: var(--gemini-blue); color: #000; font-weight: 600;">Save & Apply</button>
       </div>
     </div>
+  </div>
 
-    <!-- Tab 4: Inquiries -->
-    <div id="tab-inquiries" class="tab-content">
-      <div class="data-table-container">
-        <table class="data-table" id="inquiriesTable">
-          <thead>
-            <tr>
-              <th>Inq #</th>
-              <th>Date</th>
-              <th>Mine Name</th>
-              <th>Killed</th>
-              <th>Court President</th>
-              <th>Appointed Technical Assessors</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
+  <script>
+    let cachedData = null;
+    let allMines = [];
+    let chatHistory = [];
+    let selectedMine = "";
 
-  <!-- Footer -->
-  <footer>
-    <p>Mining Engineering Department • Mine Environment & Safety Intelligence System • Source: DGMS SANKET Publication (2016–2022)</p>
-  </footer>
-
-</div>
-
-<script>
-  let cachedData = null;
-
-  async function loadData() {
-    try {
-      const res = await fetch('/api/data');
-      cachedData = await res.json();
-      
-      // Dynamically sync KPI counters
-      if (cachedData.historical) {
-        document.getElementById('kpi-hist-count').innerText = cachedData.historical.length;
-        const totalHistKilled = cachedData.historical.reduce((sum, h) => sum + (h.killed || 0), 0);
-        document.getElementById('kpi-hist-killed').innerText = totalHistKilled.toLocaleString();
-      }
-      if (cachedData.causes) {
-        document.getElementById('kpi-cause-count').innerText = cachedData.causes.length;
-      }
-      if (cachedData.recent) {
-        document.getElementById('kpi-rec-count').innerText = cachedData.recent.length;
-      }
-      if (cachedData.inquiries) {
-        document.getElementById('kpi-inq-count').innerText = cachedData.inquiries.length;
-      }
-
-      populateTables(cachedData);
-      renderCharts(cachedData);
-    } catch (e) {
-      console.error("Failed to load initial data:", e);
+    async function init() {
+      loadSettings();
+      await loadInitialData();
+      await loadMines();
     }
-  }
 
-  function populateTables(data) {
-    // Populate Causes
-    const causesTbody = document.querySelector('#causesTable tbody');
-    causesTbody.innerHTML = '';
-    data.causes.forEach(c => {
-      causesTbody.innerHTML += `
+    // Sidebar toggle
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+    }
+
+    function startNewChat() {
+      chatHistory = [];
+      document.getElementById('messagesStream').innerHTML = '';
+      document.getElementById('messagesStream').style.display = 'none';
+      document.getElementById('heroWelcome').style.display = 'block';
+      document.getElementById('promptInput').value = '';
+      selectedMine = '';
+      document.getElementById('lblSelectedMine').innerText = 'Select Colliery';
+    }
+
+    // Settings
+    function loadSettings() {
+      const prov = localStorage.getItem('sanket_llm_provider') || 'offline';
+      const key = localStorage.getItem('sanket_llm_key') || '';
+      document.getElementById('cfgProvider').value = prov;
+      document.getElementById('cfgApiKey').value = key;
+      document.getElementById('lblCurrentEngine').innerText = `Engine: ${prov === 'offline' ? 'Offline Expert' : prov.toUpperCase()}`;
+      toggleApiKeyField();
+    }
+
+    function saveSettings() {
+      const prov = document.getElementById('cfgProvider').value;
+      const key = document.getElementById('cfgApiKey').value.trim();
+      localStorage.setItem('sanket_llm_provider', prov);
+      localStorage.setItem('sanket_llm_key', key);
+      document.getElementById('lblCurrentEngine').innerText = `Engine: ${prov === 'offline' ? 'Offline Expert' : prov.toUpperCase()}`;
+      closeSettingsModal();
+    }
+
+    function toggleApiKeyField() {
+      const prov = document.getElementById('cfgProvider').value;
+      const fld = document.getElementById('apiKeyField');
+      if (prov === 'offline') {
+        fld.style.display = 'none';
+      } else {
+        fld.style.display = 'block';
+        document.getElementById('lblApiKey').innerText = `${prov.toUpperCase()} API Key:`;
+      }
+    }
+
+    function openSettingsModal() { document.getElementById('settingsModal').classList.add('active'); }
+    function closeSettingsModal() { document.getElementById('settingsModal').classList.remove('active'); }
+
+    // Drawer Controls
+    function openDrawer() {
+      document.getElementById('drawerOverlay').classList.add('active');
+      document.getElementById('drawerPanel').classList.add('open');
+    }
+    function closeDrawer() {
+      document.getElementById('drawerOverlay').classList.remove('active');
+      document.getElementById('drawerPanel').classList.remove('open');
+    }
+
+    // Mine Picker Modal
+    function openMinePicker() {
+      document.getElementById('minePickerModal').classList.add('active');
+      renderMinesList(allMines);
+      document.getElementById('mineSearchInput').focus();
+    }
+    function closeMinePicker() {
+      document.getElementById('minePickerModal').classList.remove('active');
+    }
+
+    function renderMinesList(list) {
+      const container = document.getElementById('minePickerList');
+      container.innerHTML = '';
+      list.forEach(m => {
+        const item = document.createElement('div');
+        item.className = 'mine-picker-item';
+        item.innerHTML = `
+        <div>
+          <strong>${m.name}</strong> ${m.company ? '<span style="color:var(--text-secondary); font-size:11px;">(' + m.company + ')</span>' : ''}
+        </div>
+        <span style="color:var(--text-subtle); font-size:11px;">${m.era}</span>
+      `;
+        item.onclick = () => {
+          selectMine(m.name);
+          closeMinePicker();
+        };
+        container.appendChild(item);
+      });
+    }
+
+    function filterMinesList() {
+      const q = document.getElementById('mineSearchInput').value.toLowerCase().trim();
+      const filtered = allMines.filter(m => m.name.toLowerCase().includes(q) || (m.company && m.company.toLowerCase().includes(q)));
+      renderMinesList(filtered);
+    }
+
+    function selectMine(mineName) {
+      selectedMine = mineName;
+      document.getElementById('lblSelectedMine').innerText = mineName;
+      const input = document.getElementById('promptInput');
+      if (!input.value.trim()) {
+        input.value = `I am being transferred to ${mineName}. What dangers am I exposed to and what are my pre-shift safety checks?`;
+      }
+      input.focus();
+    }
+
+    // Load Initial Data
+    async function loadInitialData() {
+      try {
+        const res = await fetch('/api/data');
+        cachedData = await res.json();
+
+        if (cachedData.historical) {
+          document.getElementById('dkpi-hist-count').innerText = cachedData.historical.length;
+          const totalHistKilled = cachedData.historical.reduce((sum, h) => sum + (h.killed || 0), 0);
+          document.getElementById('dkpi-hist-killed').innerText = totalHistKilled.toLocaleString();
+        }
+        if (cachedData.causes) document.getElementById('dkpi-cause-count').innerText = cachedData.causes.length;
+        if (cachedData.recent) document.getElementById('dkpi-rec-count').innerText = cachedData.recent.length;
+        if (cachedData.inquiries) document.getElementById('dkpi-inq-count').innerText = cachedData.inquiries.length;
+
+        populateDrawerTables(cachedData);
+        renderDrawerCharts(cachedData);
+      } catch (e) {
+        console.error("Failed to load initial data:", e);
+      }
+    }
+
+    async function loadMines() {
+      try {
+        const res = await fetch('/api/mines');
+        allMines = await res.json();
+      } catch (e) {
+        console.error("Failed to load mines:", e);
+      }
+    }
+
+    // Prompt Submission & Chat Engine
+    function quickSend(text) {
+      document.getElementById('promptInput').value = text;
+      submitPrompt();
+    }
+
+    async function submitPrompt() {
+      const input = document.getElementById('promptInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      input.value = '';
+      const btnSend = document.getElementById('btnSend');
+      btnSend.disabled = true;
+
+      // Switch view from hero to stream if first message
+      document.getElementById('heroWelcome').style.display = 'none';
+      const stream = document.getElementById('messagesStream');
+      stream.style.display = 'flex';
+
+      // Append User Message
+      appendUserMessage(msg);
+
+      // Append Pending Assistant Bubble
+      const pendingId = 'pending-' + Date.now();
+      appendPendingAssistantMessage(pendingId);
+
+      const scrollArea = document.getElementById('chatScrollArea');
+      scrollArea.scrollTop = scrollArea.scrollHeight;
+
+      const provider = localStorage.getItem('sanket_llm_provider') || 'offline';
+      const apiKey = localStorage.getItem('sanket_llm_key') || '';
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: msg,
+            persona: "auto",
+            history: chatHistory,
+            provider: provider,
+            apiKey: apiKey
+          })
+        });
+
+        const data = await res.json();
+        replacePendingAssistantMessage(pendingId, data.reply || 'No response generated.', msg, data.semantic_match);
+      } catch (e) {
+        replacePendingAssistantMessage(pendingId, `**Error communicating with Agent:** ${e.message}`, msg, null);
+      } finally {
+        btnSend.disabled = false;
+        scrollArea.scrollTop = scrollArea.scrollHeight;
+      }
+    }
+
+    function appendUserMessage(text) {
+      const stream = document.getElementById('messagesStream');
+      const row = document.createElement('div');
+      row.className = 'msg-row user';
+      row.innerHTML = `<div class="msg-body">${marked.parse(text)}</div>`;
+      stream.appendChild(row);
+    }
+
+    function appendPendingAssistantMessage(id) {
+      const stream = document.getElementById('messagesStream');
+      const row = document.createElement('div');
+      row.className = 'msg-row agent';
+      row.id = id;
+      row.innerHTML = `
+      <div class="msg-icon"><img src="logo.png" alt="Sanket"></div>
+      <div class="msg-body">
+        <p style="color: var(--gemini-blue); font-style: italic;">Semantic search & statutory retrieval across SANKET...</p>
+      </div>
+    `;
+      stream.appendChild(row);
+    }
+
+    function replacePendingAssistantMessage(id, markdown, userQuery, semanticMatch) {
+      const row = document.getElementById(id);
+      if (!row) return;
+
+      const isRevisitPlan = markdown.includes('Operational Re-entry') || markdown.includes('Revisit Safety Plan');
+
+      let badgeHtml = '';
+      if (semanticMatch && semanticMatch.title) {
+        badgeHtml = `
+        <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(138, 180, 248, 0.08); border: 1px solid rgba(138, 180, 248, 0.22); border-radius: 20px; padding: 4px 12px; font-size: 11.5px; color: #8ab4f8; margin-bottom: 14px; font-weight: 500;">
+          <span>Semantic Match: <strong>${semanticMatch.confidence}</strong></span>
+          <span style="opacity: 0.4;">|</span>
+          <span style="color: #c4c7c5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 450px;">${semanticMatch.title}</span>
+        </div>
+      `;
+      }
+
+      row.innerHTML = `
+      <div class="msg-icon"><img src="logo.png" alt="Sanket"></div>
+      <div class="msg-body">
+        ${badgeHtml}
+        ${marked.parse(markdown)}
+        <div class="msg-actions">
+          <button class="btn-msg-action" onclick="copyResponseText(this)">Copy</button>
+          ${isRevisitPlan ? `<button class="btn-msg-action export" onclick="exportRevisitPlan(${JSON.stringify(markdown)})">Download Revisit Plan (.md)</button>` : ''}
+        </div>
+      </div>
+    `;
+
+      chatHistory.push({ role: "user", content: userQuery });
+      chatHistory.push({ role: "assistant", content: markdown });
+    }
+
+    function copyResponseText(btn) {
+      const parentBody = btn.closest('.msg-body');
+      // Get text excluding buttons
+      const clone = parentBody.cloneNode(true);
+      const actions = clone.querySelector('.msg-actions');
+      if (actions) actions.remove();
+      navigator.clipboard.writeText(clone.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = 'Copied!';
+        setTimeout(() => btn.innerText = orig, 2000);
+      });
+    }
+
+    function exportRevisitPlan(markdownContent) {
+      const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `operational_revisit_plan_${Date.now()}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Populate Drawer Tables & Charts
+    function populateDrawerTables(data) {
+      // Causes
+      const cTbody = document.querySelector('#drawerCausesTable tbody');
+      cTbody.innerHTML = '';
+      data.causes.forEach(c => {
+        cTbody.innerHTML += `
         <tr>
-          <td><strong style="color: #f1f5f9;">${c.category}</strong></td>
-          <td><span class="badge red">${c.fatal_incidents} Incidents</span></td>
-          <td><strong style="color: #f87171;">${c.total_deaths} Deaths</strong></td>
-          <td style="color: #cbd5e1; font-size: 12px;">${c.key_mechanism}</td>
-          <td><code style="color: #38bdf8; font-size: 11px;">${c.primary_regulations}</code></td>
+          <td><strong>${c.category}</strong></td>
+          <td><span class="badge-pill-tag amber">${c.fatal_incidents}</span></td>
+          <td><strong style="color:#f87171;">${c.total_deaths}</strong></td>
+          <td style="font-size:11.5px; color:var(--text-secondary);">${c.key_mechanism}</td>
+          <td><code>${c.primary_regulations}</code></td>
         </tr>
       `;
-    });
+      });
 
-    // Populate Recent
-    const recTbody = document.querySelector('#recentTable tbody');
-    recTbody.innerHTML = '';
-    data.recent.forEach(r => {
-      recTbody.innerHTML += `
+      // Recent
+      const rTbody = document.querySelector('#drawerRecentTable tbody');
+      rTbody.innerHTML = '';
+      data.recent.forEach(r => {
+        rTbody.innerHTML += `
         <tr>
           <td>${r.date}</td>
           <td><strong>${r.mine_name}</strong></td>
-          <td><span class="badge blue">${r.company}</span></td>
+          <td><span class="badge-pill-tag blue">${r.company}</span></td>
           <td>${r.root_cause_category}</td>
-          <td><code>${r.cause_code}</code></td>
-          <td><span class="badge red">${r.killed}</span></td>
-          <td>${r.injured}</td>
-          <td style="font-size: 11px; max-width: 250px;"><code>${r.cmr_violations || 'N/A'}</code></td>
+          <td><strong style="color:#f87171;">${r.killed}</strong></td>
+          <td><code style="font-size:10px;">${r.cmr_violations || 'N/A'}</code></td>
         </tr>
       `;
-    });
+      });
 
-    // Populate Historical
-    const histTbody = document.querySelector('#historicalTable tbody');
-    histTbody.innerHTML = '';
-    data.historical.forEach(h => {
-      histTbody.innerHTML += `
+      // Historical
+      const hTbody = document.querySelector('#drawerHistTable tbody');
+      hTbody.innerHTML = '';
+      data.historical.forEach(h => {
+        hTbody.innerHTML += `
         <tr>
           <td>${h.date}</td>
           <td><strong>${h.mine_name}</strong></td>
           <td>${h.coalfield_state}</td>
-          <td><span class="badge red">${h.killed}</span></td>
-          <td>${h.injured}</td>
-          <td>${h.official_cause}</td>
-          <td><span class="badge amber">${h.disaster_type}</span></td>
+          <td><span class="badge-pill-tag red">${h.killed}</span></td>
+          <td style="font-size:11.5px;">${h.official_cause}</td>
         </tr>
       `;
-    });
+      });
 
-    // Populate Inquiries
-    const inqTbody = document.querySelector('#inquiriesTable tbody');
-    inqTbody.innerHTML = '';
-    data.inquiries.forEach(i => {
-      inqTbody.innerHTML += `
+      // Inquiries
+      const iTbody = document.querySelector('#drawerInqTable tbody');
+      iTbody.innerHTML = '';
+      data.inquiries.forEach(i => {
+        iTbody.innerHTML += `
         <tr>
           <td>#${i.inq_no}</td>
           <td>${i.date}</td>
           <td><strong>${i.mine_name}</strong></td>
-          <td><span class="badge red">${i.killed}</span></td>
+          <td><strong style="color:#f87171;">${i.killed}</strong></td>
           <td>${i.president}</td>
-          <td style="font-size: 12px; color: #cbd5e1;">${i.assessors}</td>
+          <td style="font-size:11.5px; color:var(--text-secondary);">${i.assessors}</td>
         </tr>
       `;
-    });
-  }
+      });
+    }
 
-  function renderCharts(data) {
-    // Cause Chart
-    const causeLabels = data.causes.map(c => c.category);
-    const causeCounts = data.causes.map(c => c.fatal_incidents);
-    const causeDeaths = data.causes.map(c => c.total_deaths);
-
-    new Chart(document.getElementById('causeChart'), {
-      type: 'bar',
-      data: {
-        labels: causeLabels.map(l => l.length > 25 ? l.substring(0, 25) + '...' : l),
-        datasets: [
-          {
-            label: 'Fatal Incidents',
-            data: causeCounts,
-            backgroundColor: '#f59e0b',
-            borderRadius: 6
-          },
-          {
-            label: 'Total Deaths',
-            data: causeDeaths,
-            backgroundColor: '#ef4444',
-            borderRadius: 6
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { labels: { color: '#94a3b8' } }
+    function renderDrawerCharts(data) {
+      new Chart(document.getElementById('drawerCauseChart'), {
+        type: 'bar',
+        data: {
+          labels: data.causes.map(c => c.category.length > 15 ? c.category.substring(0, 15) + '...' : c.category),
+          datasets: [{
+            label: 'Fatalities',
+            data: data.causes.map(c => c.total_deaths),
+            backgroundColor: '#8ab4f8',
+            borderRadius: 4
+          }]
         },
-        scales: {
-          x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } },
-          y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#9aa0a6', font: { size: 9 } }, grid: { display: false } },
+            y: { ticks: { color: '#9aa0a6', font: { size: 9 } }, grid: { color: '#333538' } }
+          }
         }
-      }
-    });
+      });
 
-    // Company Chart
-    const compLabels = data.companies.map(c => c.company);
-    const compDeaths = data.companies.map(c => c.deaths);
-
-    new Chart(document.getElementById('companyChart'), {
-      type: 'doughnut',
-      data: {
-        labels: compLabels,
-        datasets: [{
-          data: compDeaths,
-          backgroundColor: ['#f59e0b', '#ef4444', '#06b6d4', '#10b981', '#8b5cf6', '#ec4899', '#64748b']
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: 'right', labels: { color: '#94a3b8' } }
+      new Chart(document.getElementById('drawerCompanyChart'), {
+        type: 'doughnut',
+        data: {
+          labels: data.companies.map(c => c.company),
+          datasets: [{
+            data: data.companies.map(c => c.deaths),
+            backgroundColor: ['#8ab4f8', '#f87171', '#fbbf24', '#34d399', '#c58af9', '#f472b6', '#9ca3af']
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'right', labels: { color: '#9aa0a6', font: { size: 9 } } } }
         }
-      }
-    });
-  }
-
-  async function executeQA() {
-    const input = document.getElementById('qaInput');
-    const query = input.value.trim();
-    if (!query) return;
-
-    const resCard = document.getElementById('qaResponse');
-    const mdContainer = document.getElementById('qaMarkdown');
-
-    resCard.classList.add('active');
-    mdContainer.innerHTML = '<p style="color: var(--accent-amber);">⚡ Searching SQLite Database & Analyzing DGMS Findings...</p>';
-
-    try {
-      const res = await fetch(`/api/ask?q=${encodeURIComponent(query)}`);
-      const data = await res.json();
-      mdContainer.innerHTML = marked.parse(data.markdown || 'No response found.');
-    } catch (e) {
-      mdContainer.innerHTML = `<p style="color: #ef4444;">Error retrieving answer: ${e.message}</p>`;
+      });
     }
-  }
 
-  function askQuestion(q) {
-    document.getElementById('qaInput').value = q;
-    executeQA();
-  }
-
-  function switchTab(tabId, el) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-    if (el) {
-      el.classList.add('active');
-    } else if (window.event && window.event.target) {
-      window.event.target.classList.add('active');
+    function switchDrawerTab(tabId, el) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      if (el) el.classList.add('active');
+      const target = document.getElementById(tabId);
+      if (target) target.classList.add('active');
+      filterDrawerTable();
     }
-    const target = document.getElementById(tabId);
-    if (target) target.classList.add('active');
 
-    filterActiveTable();
-  }
+    function filterDrawerTable() {
+      const q = (document.getElementById('drawerSearch')?.value || '').toLowerCase().trim();
+      const activeContent = document.querySelector('.tab-content.active');
+      if (!activeContent) return;
+      const rows = activeContent.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = (!q || text.includes(q)) ? '' : 'none';
+      });
+    }
 
-  function filterActiveTable() {
-    const q = (document.getElementById('tableFilterInput')?.value || '').toLowerCase().trim();
-    const activeContent = document.querySelector('.tab-content.active');
-    if (!activeContent) return;
-    const rows = activeContent.querySelectorAll('tbody tr');
-    rows.forEach(row => {
-      const text = row.innerText.toLowerCase();
-      if (!q || text.includes(q)) {
-        row.style.display = '';
-      } else {
-        row.style.display = 'none';
-      }
-    });
-  }
-
-  window.onload = loadData;
-</script>
+    window.onload = init;
+  </script>
 
 </body>
+
 </html>

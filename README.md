@@ -13,38 +13,48 @@ Based on the official 316-page publication by the **Directorate General of Mines
 
 ## 📌 Project Highlights
 
-- **Zero-Hallucination Query Engine:** Uses deterministic SQL lookups and domain physics retrieval instead of unpredictable LLM inferences.
+- **Conversational Safety AI Agent (`chat_agent.py`):** An intelligent agent capable of conversing like an LLM using data from the 316-page SANKET PDF, relational databases, and Coal Mines Regulations (CMR 2017).
+- **Specialized Operational Personas:**
+  - **👷 Transferred Worker Safety Advisory:** Briefs miners transferred to unfamiliar collieries on historical hazards, operational dangers (misfires, solid blasting into blind headings, noxious gases), and generates pre-shift face safety checklists.
+  - **🛠️ Project Manager / Engineer Revisit Plan:** Formulates exhaustive 5-phase operational re-entry protocols (remote atmospheric diagnostics, CMR Reg 153 ventilation restoration, strata checks, stone dust barriers under Reg 136, Mines Rescue Brigade escort) with one-click `.md` export.
+  - **⚖️ DGMS Statutory Auditor:** Pinpoints CMR 2017 violations and judicial precedents across 19 Section 24 Courts of Inquiry.
+  - **🔬 Mine Explosion Scientist:** Explains Coward's flammability diagram, Lower/Upper explosive limits ($5\% - 15\%$), and stone dust inerting standards.
+- **Dual-Engine Inference Strategy:**
+  - **Offline Expert Engine (Default):** 100% offline, zero-latency, zero external API keys or cost — guaranteed reliable during viva examinations.
+  - **Online LLM Engine:** Pluggable Google Gemini 2.5, Groq, or OpenAI API key integration directly in the browser settings.
 - **120+ Years of Official Mining Data:**
   - **48 Major Explosion Disasters (1901–2022, $\ge 4$ deaths):** Documenting **1,361 miners killed**.
-  - **19 In-Depth Investigative Cases (2016–2022):** Documenting **23 fatalities**, 12 serious injuries, physical failure mechanisms, and Coal Mines Regulations (CMR) statutory violations.
+  - **19 In-Depth Investigative Cases (2016–2022):** Documenting **23 fatalities**, 12 serious injuries, physical failure mechanisms, and CMR statutory violations.
   - **19 Statutory Courts of Inquiry:** Inquiries instituted under Section 24 of the Mines Act, 1952.
-- **6 Operational Root Cause Taxonomies:** Classifies real-world failures into actionable engineering categories.
-- **Zero External Dependencies:** Built entirely with Python's standard library (`sqlite3`, `http.server`, `socketserver`, `json`, `urllib`). No complex setup required.
+- **Zero External Dependencies:** Built entirely with Python's standard library (`sqlite3`, `http.server`, `socketserver`, `json`, `urllib`).
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Launch the Interactive Web Dashboard
-Clone the repository and run the built-in server:
+### 1. Launch the Interactive Web Dashboard & AI Studio
+Run the built-in server:
 ```bash
 python server.py
 ```
-Open your browser and navigate to:
+Open your browser at:
 ```
 http://localhost:8000
 ```
-- **Live KPI Counters:** Historical fatalities, recent cases, and inquiry counts.
-- **Clickable Question Chips:** One-click queries for common professor questions.
-- **Interactive Visualizations:** Chart.js bar and doughnut charts.
-- **Instant Search:** Real-time client-side filtering across all 4 data registers.
+- **Conversational AI Studio:** Select any persona (Worker, Project Manager, Auditor, Science) and ask open-ended questions.
+- **Colliery Autocomplete:** Select any of the 48+ mines from the dropdown to auto-draft transfer advisories or revisit plans.
+- **Downloadable Revisit Plans:** Click the "📄 Download Revisit Plan (.md)" button to generate formal engineering documents.
+- **Live KPI Counters & Registers:** Real-time client-side filtering across all 4 data tables and Chart.js analytics.
 
-### 2. Run the Command-Line Interface (CLI)
-For a terminal-based presentation:
+### 2. Run the Interactive Terminal CLI
+For command-line presentation:
 ```bash
 python query_tool.py
 ```
-Select any numbered option (`1` to `9`) or type a custom query.
+- Press `W` for **Worker Transfer Advisory** mode.
+- Press `R` for **Project Manager Revisit Plan** mode.
+- Press `A` for **Statutory Audit** or `S` for **Explosion Science**.
+- Press `1` to `9` for direct historical and cause-wise lookups.
 
 ---
 
