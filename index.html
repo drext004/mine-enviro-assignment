@@ -1005,8 +1005,11 @@
       <button class="btn-sidebar-footer" onclick="openDrawer()">
         <span>View Registers & Charts</span>
       </button>
+      <button class="btn-sidebar-footer" onclick="openDocsModal()">
+        <span>System Docs & Capabilities</span>
+      </button>
       <button class="btn-sidebar-footer" onclick="openSettingsModal()">
-        <span id="lblCurrentEngine">Engine: Offline Expert</span>
+        <span id="lblCurrentEngine">Engine: Homelab Ollama (Llama 3.2 3B)</span>
       </button>
     </div>
   </aside>
@@ -1025,6 +1028,9 @@
       <div class="top-bar-right">
         <button class="btn-top analytics" onclick="openDrawer()">
           <span>View Registers & KPIs</span>
+        </button>
+        <button class="btn-top" onclick="openDocsModal()">
+          <span>System Docs</span>
         </button>
         <button class="btn-top" onclick="openSettingsModal()">
           <span>Settings</span>
@@ -1100,22 +1106,21 @@
   <div class="drawer-panel" id="drawerPanel">
     <div class="drawer-header">
       <div>
-        <h2>SANKET Safety Registers & Historical Disasters</h2>
-        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">120+ Years of Official Mining Safety
-          Records (1901–2022)</p>
+        <h2>DGMS SANKET Safety Registers & Analytics</h2>
+        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Official DGMS Mining Accident & Safety Data (2016–2022)</p>
       </div>
       <button class="btn-close-drawer" onclick="closeDrawer()">&times;</button>
     </div>
 
     <div class="drawer-body">
-      <!-- Mini KPI Row -->
+      <!-- Mini KPI Row (SANKET 2016–2022 Metrics) -->
       <div class="drawer-kpis">
         <div class="mini-kpi">
-          <div class="mini-kpi-val" id="dkpi-hist-count">48</div>
-          <div class="mini-kpi-lbl">Major Disasters</div>
+          <div class="mini-kpi-val" id="dkpi-rec-count">19</div>
+          <div class="mini-kpi-lbl">Fatal Incidents (2016–2022)</div>
         </div>
         <div class="mini-kpi">
-          <div class="mini-kpi-val" id="dkpi-hist-killed">1,361</div>
+          <div class="mini-kpi-val" id="dkpi-rec-killed">26</div>
           <div class="mini-kpi-lbl">Miners Killed</div>
         </div>
         <div class="mini-kpi">
@@ -1123,12 +1128,12 @@
           <div class="mini-kpi-lbl">Root Causes</div>
         </div>
         <div class="mini-kpi">
-          <div class="mini-kpi-val" id="dkpi-rec-count">19</div>
-          <div class="mini-kpi-lbl">Recent Cases</div>
+          <div class="mini-kpi-val" id="dkpi-comp-count">8</div>
+          <div class="mini-kpi-lbl">Mining PSUs</div>
         </div>
         <div class="mini-kpi">
-          <div class="mini-kpi-val" id="dkpi-inq-count">19</div>
-          <div class="mini-kpi-lbl">Courts of Inquiry</div>
+          <div class="mini-kpi-val" id="dkpi-cmr-reg">CMR 2017</div>
+          <div class="mini-kpi-lbl">Statutory Standards</div>
         </div>
       </div>
 
@@ -1140,7 +1145,7 @@
           <canvas id="drawerCauseChart" height="200"></canvas>
         </div>
         <div style="background: #1e1f20; padding: 14px; border-radius: 12px; border: 1px solid var(--card-border);">
-          <h4 style="font-size: 13px; margin-bottom: 10px; color: var(--text-secondary);">Fatalities by Company</h4>
+          <h4 style="font-size: 13px; margin-bottom: 10px; color: var(--text-secondary);">Fatalities by Mining Company (2016–2022)</h4>
           <canvas id="drawerCompanyChart" height="200"></canvas>
         </div>
       </div>
@@ -1150,9 +1155,9 @@
         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
         <div class="tabs-header" style="margin-bottom: 0;">
           <button class="tab-btn active" onclick="switchDrawerTab('tab-causes', this)">Root Causes (6)</button>
-          <button class="tab-btn" onclick="switchDrawerTab('tab-recent', this)">Recent Cases (19)</button>
-          <button class="tab-btn" onclick="switchDrawerTab('tab-historical', this)">Historical Disasters (48)</button>
-          <button class="tab-btn" onclick="switchDrawerTab('tab-inquiries', this)">Inquiries (19)</button>
+          <button class="tab-btn" onclick="switchDrawerTab('tab-recent', this)">SANKET Incidents (2016–2022) (19)</button>
+          <button class="tab-btn" onclick="switchDrawerTab('tab-historical', this)">Historical Archives (1901–2022) (48)</button>
+          <button class="tab-btn" onclick="switchDrawerTab('tab-inquiries', this)">Inquiries Archive (19)</button>
         </div>
         <input type="text" id="drawerSearch" placeholder="Filter rows..." oninput="filterDrawerTable()"
           style="background: #131314; border: 1px solid var(--card-border); padding: 6px 12px; border-radius: 8px; color: #fff; font-size: 12px; outline: none; width: 200px;">
@@ -1254,39 +1259,133 @@
   <div class="mine-picker-modal" id="settingsModal" onclick="closeSettingsModal(event)">
     <div class="mine-picker-card" onclick="event.stopPropagation()">
       <h3>
-        <span>Inference Engine Settings</span>
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <img src="logo.png" alt="Sanket" style="width: 20px; height: 20px; object-fit: contain;">
+          Inference Engine Settings
+        </span>
         <button onclick="closeSettingsModal()"
           style="background:transparent; border:none; color:var(--text-secondary); font-size:20px; cursor:pointer;">&times;</button>
       </h3>
       <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
-        The <strong>Offline Expert Engine</strong> runs 100% locally with zero external API key requirements. You can
-        also connect cloud LLM APIs.
+        Connect your self-hosted <strong>Ollama Homelab instance (Llama 3.2 3B)</strong> over Cloudflare Tunnel, or use the 100% local <strong>Offline Expert Engine</strong>.
       </p>
 
-      <div style="margin-bottom: 16px;">
+      <div style="margin-bottom: 14px;">
         <label
           style="font-size: 12px; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 6px;">Provider:</label>
         <select id="cfgProvider" onchange="toggleApiKeyField()"
           style="width: 100%; background: #131314; border: 1px solid var(--card-border); padding: 10px; border-radius: 8px; color: #fff; font-size: 13.5px; outline: none;">
+          <option value="ollama">Self-Hosted Homelab Ollama (Llama 3.2 3B via Cloudflare)</option>
           <option value="offline">Built-in Offline Expert Engine (100% Free / Instant)</option>
-          <option value="gemini">Google Gemini API (gemini-2.5-flash)</option>
-          <option value="groq">Groq API (llama-3.3-70b-versatile)</option>
-          <option value="openai">OpenAI API (gpt-4o-mini)</option>
+          <option value="gemini">Google Gemini API (Backup)</option>
+          <option value="groq">Groq Cloud API (Backup)</option>
+          <option value="openai">OpenAI API (Backup)</option>
         </select>
       </div>
 
-      <div style="margin-bottom: 16px; display: none;" id="apiKeyField">
-        <label id="lblApiKey"
-          style="font-size: 12px; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 6px;">API
-          Key:</label>
-        <input type="password" id="cfgApiKey" placeholder="Paste your API key here..."
-          style="width: 100%; background: #131314; border: 1px solid var(--card-border); padding: 10px; border-radius: 8px; color: #fff; font-size: 13.5px; outline: none;">
+      <div id="homelabConfigFields" style="margin-bottom: 14px;">
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 12px; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 6px;">Homelab Endpoint URL:</label>
+          <input type="text" id="cfgEndpointUrl" placeholder="https://ollama.drext.dpdns.org/v1"
+            style="width: 100%; background: #131314; border: 1px solid var(--card-border); padding: 10px; border-radius: 8px; color: #fff; font-size: 13px; outline: none;">
+          <span style="font-size: 11px; color: var(--text-subtle); margin-top: 4px; display: block;">Secure Cloudflare Tunnel endpoint or SSH local port.</span>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 12px; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 6px;">Model Name / Tag:</label>
+          <input type="text" id="cfgModel" value="llama3.2:3b" placeholder="llama3.2:3b"
+            style="width: 100%; background: #131314; border: 1px solid var(--card-border); padding: 10px; border-radius: 8px; color: #fff; font-size: 13px; outline: none;">
+        </div>
       </div>
 
-      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+      <div style="margin-bottom: 14px;" id="apiKeyField">
+        <label id="lblApiKey"
+          style="font-size: 12px; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 6px;">API Key / Bearer Token:</label>
+        <input type="password" id="cfgApiKey" placeholder="Paste your API key here..."
+          style="width: 100%; background: #131314; border: 1px solid var(--card-border); padding: 10px; border-radius: 8px; color: #fff; font-size: 13px; outline: none;">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
         <button class="btn-msg-action" onclick="closeSettingsModal()">Cancel</button>
         <button class="btn-top" onclick="saveSettings()"
           style="background: var(--gemini-blue); color: #000; font-weight: 600;">Save & Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SYSTEM DOCUMENTATION & CAPABILITIES MODAL -->
+  <div class="mine-picker-modal" id="docsModal" onclick="closeDocsModal(event)">
+    <div class="mine-picker-card" style="width: 760px; max-width: 95%; max-height: 85vh; display: flex; flex-direction: column;" onclick="event.stopPropagation()">
+      <h3>
+        <span style="display: flex; align-items: center; gap: 10px;">
+          <img src="logo.png" alt="Sanket" style="width: 22px; height: 22px; object-fit: contain;">
+          Sanket — System Architecture & Documentation
+        </span>
+        <button onclick="closeDocsModal()"
+          style="background:transparent; border:none; color:var(--text-secondary); font-size:22px; cursor:pointer;">&times;</button>
+      </h3>
+      
+      <div style="overflow-y: auto; padding-right: 8px; font-size: 13.5px; line-height: 1.6; color: var(--text-primary);">
+        <div style="background: rgba(138, 180, 248, 0.08); border-left: 3px solid var(--gemini-blue); padding: 12px 16px; border-radius: 8px; margin-bottom: 18px;">
+          <strong>What is Sanket?</strong><br>
+          An offline-capable AI safety intelligence system engineered for Indian Coal Mining Environmental Engineering & Safety Audits. Backed by the official DGMS <em>SANKET (2016–2022)</em> report, Coal Mines Regulations (CMR 2017), and 120+ years of historical disaster archives (1901–2022).
+        </div>
+
+        <h4 style="color: #fff; margin: 14px 0 8px; font-size: 14.5px;">The 6 Core Safety Intelligence Pillars</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px;">
+          <div style="background: #18191a; border: 1px solid var(--card-border); padding: 12px; border-radius: 10px;">
+            <strong style="color: #8ab4f8; font-size: 13px;">1. Worker Transfer Advisories</strong>
+            <p style="color: var(--text-secondary); font-size: 12px; margin-top: 4px;">Role-specific hazard alerts (drillers, blasters, loaders) and pre-shift statutory checklists across 42+ collieries.</p>
+          </div>
+          <div style="background: #18191a; border: 1px solid var(--card-border); padding: 12px; border-radius: 10px;">
+            <strong style="color: #8ab4f8; font-size: 13px;">2. Engineer Revisit Plans</strong>
+            <p style="color: var(--text-secondary); font-size: 12px; margin-top: 4px;">Statutory 5-phase re-entry protocols for reopening sealed districts, recovering headings, and ventilation restoration.</p>
+          </div>
+          <div style="background: #18191a; border: 1px solid var(--card-border); padding: 12px; border-radius: 10px;">
+            <strong style="color: #8ab4f8; font-size: 13px;">3. Historical Disaster Dossiers</strong>
+            <p style="color: var(--text-secondary); font-size: 12px; margin-top: 4px;">Deep-dives into Dhori (1965, 268 dead), Chinakuri (176 dead), Bhatdee (50 dead), Poidih (209 dead), and inquiry commissions.</p>
+          </div>
+          <div style="background: #18191a; border: 1px solid var(--card-border); padding: 12px; border-radius: 10px;">
+            <strong style="color: #8ab4f8; font-size: 13px;">4. 4-Pillar Prevention Blueprint</strong>
+            <p style="color: var(--text-secondary); font-size: 12px; margin-top: 4px;">CMR 153 Methane elimination, CMR 136 Stone dusting & barriers, CMR 183/204 Ignition controls, and CMR 170 Telemetry.</p>
+          </div>
+          <div style="background: #18191a; border: 1px solid var(--card-border); padding: 12px; border-radius: 10px;">
+            <strong style="color: #8ab4f8; font-size: 13px;">5. DGMS Institutional Mandates</strong>
+            <p style="color: var(--text-secondary); font-size: 12px; margin-top: 4px;">Sections 22/22A prohibition powers, Section 24 Courts of Inquiry, Board of Mining Examinations, and Safety Circulars.</p>
+          </div>
+          <div style="background: #18191a; border: 1px solid var(--card-border); padding: 12px; border-radius: 10px;">
+            <strong style="color: #8ab4f8; font-size: 13px;">6. Explosion Thermodynamics</strong>
+            <p style="color: var(--text-secondary); font-size: 12px; margin-top: 4px;">Coward flammability diagram, LEL/UEL, Graham's ratio, MEC (30-45 g/m³), and stone dust heat absorption kinetics.</p>
+          </div>
+        </div>
+
+        <h4 style="color: #fff; margin: 14px 0 8px; font-size: 14.5px;">Sample Viva Prompts (Click to Run)</h4>
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px;">
+          <button class="mine-picker-item" onclick="closeDocsModal(); quickSend('what is DGMS');">
+            <span><strong>What is DGMS</strong> — Mandates, powers under Mines Act 1952 & CMR 2017</span>
+            <span style="color: var(--gemini-blue); font-size: 12px;">Run &rarr;</span>
+          </button>
+          <button class="mine-picker-item" onclick="closeDocsModal(); quickSend('what happened at the Dhori mine');">
+            <span><strong>What happened at Dhori</strong> — 1965 disaster analysis & inquiry findings</span>
+            <span style="color: var(--gemini-blue); font-size: 12px;">Run &rarr;</span>
+          </button>
+          <button class="mine-picker-item" onclick="closeDocsModal(); quickSend('how can Dhori explosion be prevented');">
+            <span><strong>How can it be prevented</strong> — 4-pillar statutory engineering blueprint</span>
+            <span style="color: var(--gemini-blue); font-size: 12px;">Run &rarr;</span>
+          </button>
+          <button class="mine-picker-item" onclick="closeDocsModal(); quickSend('Formulate an operational revisit and re-entry safety plan for the sealed-off district at Bagdewa Mine.');">
+            <span><strong>Operational Revisit Plan</strong> — 5-phase protocol for sealed district at Bagdewa</span>
+            <span style="color: var(--gemini-blue); font-size: 12px;">Run &rarr;</span>
+          </button>
+          <button class="mine-picker-item" onclick="closeDocsModal(); quickSend('Explain Coward flammability diagram, nose point, and explosive limits of methane.');">
+            <span><strong>Explosion Science</strong> — Coward flammability diagram & nose point coordinates</span>
+            <span style="color: var(--gemini-blue); font-size: 12px;">Run &rarr;</span>
+          </button>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--card-border);">
+        <button class="btn-top" onclick="closeDocsModal()" style="background: var(--gemini-blue); color: #000; font-weight: 600;">Close</button>
       </div>
     </div>
   </div>
@@ -1320,36 +1419,78 @@
 
     // Settings
     function loadSettings() {
-      const prov = localStorage.getItem('sanket_llm_provider') || 'offline';
-      const key = localStorage.getItem('sanket_llm_key') || '';
+      let prov = localStorage.getItem('sanket_llm_provider');
+      if (!prov || prov === 'offline') {
+        prov = 'ollama';
+        localStorage.setItem('sanket_llm_provider', 'ollama');
+      }
+      const key = localStorage.getItem('sanket_llm_key') || 'skdWeR123DxcVnMisDto';
+      const url = localStorage.getItem('sanket_llm_url') || 'https://ollama.drext.dpdns.org/v1';
+      const model = localStorage.getItem('sanket_llm_model') || 'llama3.2:3b';
+
+      localStorage.setItem('sanket_llm_key', key);
+      localStorage.setItem('sanket_llm_url', url);
+      localStorage.setItem('sanket_llm_model', model);
+
       document.getElementById('cfgProvider').value = prov;
       document.getElementById('cfgApiKey').value = key;
-      document.getElementById('lblCurrentEngine').innerText = `Engine: ${prov === 'offline' ? 'Offline Expert' : prov.toUpperCase()}`;
+      document.getElementById('cfgEndpointUrl').value = url;
+      document.getElementById('cfgModel').value = model;
+
+      let engineLbl = 'Homelab Ollama (Llama 3.2 3B)';
+      if (prov === 'offline') engineLbl = 'Offline Expert';
+      else if (prov !== 'ollama') engineLbl = prov.toUpperCase();
+      document.getElementById('lblCurrentEngine').innerText = `Engine: ${engineLbl}`;
       toggleApiKeyField();
     }
 
     function saveSettings() {
       const prov = document.getElementById('cfgProvider').value;
       const key = document.getElementById('cfgApiKey').value.trim();
+      const url = document.getElementById('cfgEndpointUrl').value.trim();
+      const model = document.getElementById('cfgModel').value.trim() || 'llama3.2:3b';
+
       localStorage.setItem('sanket_llm_provider', prov);
       localStorage.setItem('sanket_llm_key', key);
-      document.getElementById('lblCurrentEngine').innerText = `Engine: ${prov === 'offline' ? 'Offline Expert' : prov.toUpperCase()}`;
+      localStorage.setItem('sanket_llm_url', url);
+      localStorage.setItem('sanket_llm_model', model);
+
+      let engineLbl = 'Offline Expert';
+      if (prov === 'ollama') engineLbl = 'Homelab Ollama (Llama 3.2 3B)';
+      else if (prov !== 'offline') engineLbl = prov.toUpperCase();
+      document.getElementById('lblCurrentEngine').innerText = `Engine: ${engineLbl}`;
       closeSettingsModal();
     }
 
     function toggleApiKeyField() {
       const prov = document.getElementById('cfgProvider').value;
-      const fld = document.getElementById('apiKeyField');
+      const fldKey = document.getElementById('apiKeyField');
+      const fldHomelab = document.getElementById('homelabConfigFields');
+
       if (prov === 'offline') {
-        fld.style.display = 'none';
+        fldKey.style.display = 'none';
+        fldHomelab.style.display = 'none';
+      } else if (prov === 'ollama') {
+        fldKey.style.display = 'block';
+        fldHomelab.style.display = 'block';
+        document.getElementById('lblApiKey').innerText = 'Ollama API Key / Bearer Token:';
       } else {
-        fld.style.display = 'block';
+        fldKey.style.display = 'block';
+        fldHomelab.style.display = 'none';
         document.getElementById('lblApiKey').innerText = `${prov.toUpperCase()} API Key:`;
       }
     }
 
     function openSettingsModal() { document.getElementById('settingsModal').classList.add('active'); }
     function closeSettingsModal() { document.getElementById('settingsModal').classList.remove('active'); }
+
+    // System Documentation Modal
+    function openDocsModal() { document.getElementById('docsModal').classList.add('active'); }
+    function closeDocsModal(e) {
+      if (!e || e.target.id === 'docsModal' || e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+        document.getElementById('docsModal').classList.remove('active');
+      }
+    }
 
     // Drawer Controls
     function openDrawer() {
@@ -1407,20 +1548,27 @@
       input.focus();
     }
 
-    // Load Initial Data
+    // Load Initial Data (DGMS SANKET 2016–2022 Metrics)
     async function loadInitialData() {
       try {
         const res = await fetch('/api/data');
         cachedData = await res.json();
 
-        if (cachedData.historical) {
-          document.getElementById('dkpi-hist-count').innerText = cachedData.historical.length;
-          const totalHistKilled = cachedData.historical.reduce((sum, h) => sum + (h.killed || 0), 0);
-          document.getElementById('dkpi-hist-killed').innerText = totalHistKilled.toLocaleString();
+        if (cachedData.recent) {
+          const recCountEl = document.getElementById('dkpi-rec-count');
+          if (recCountEl) recCountEl.innerText = cachedData.recent.length;
+          const totalRecKilled = cachedData.recent.reduce((sum, r) => sum + (r.killed || 0), 0);
+          const recKilledEl = document.getElementById('dkpi-rec-killed');
+          if (recKilledEl) recKilledEl.innerText = totalRecKilled.toLocaleString();
         }
-        if (cachedData.causes) document.getElementById('dkpi-cause-count').innerText = cachedData.causes.length;
-        if (cachedData.recent) document.getElementById('dkpi-rec-count').innerText = cachedData.recent.length;
-        if (cachedData.inquiries) document.getElementById('dkpi-inq-count').innerText = cachedData.inquiries.length;
+        if (cachedData.causes) {
+          const causeCountEl = document.getElementById('dkpi-cause-count');
+          if (causeCountEl) causeCountEl.innerText = cachedData.causes.length;
+        }
+        if (cachedData.companies) {
+          const compCountEl = document.getElementById('dkpi-comp-count');
+          if (compCountEl) compCountEl.innerText = cachedData.companies.length;
+        }
 
         populateDrawerTables(cachedData);
         renderDrawerCharts(cachedData);
@@ -1468,8 +1616,10 @@
       const scrollArea = document.getElementById('chatScrollArea');
       scrollArea.scrollTop = scrollArea.scrollHeight;
 
-      const provider = localStorage.getItem('sanket_llm_provider') || 'offline';
-      const apiKey = localStorage.getItem('sanket_llm_key') || '';
+      const provider = localStorage.getItem('sanket_llm_provider') || 'ollama';
+      const apiKey = localStorage.getItem('sanket_llm_key') || 'skdWeR123DxcVnMisDto';
+      const endpointUrl = localStorage.getItem('sanket_llm_url') || '';
+      const model = localStorage.getItem('sanket_llm_model') || 'llama3.2:3b';
 
       try {
         const res = await fetch('/api/chat', {
@@ -1480,7 +1630,10 @@
             persona: "auto",
             history: chatHistory,
             provider: provider,
-            apiKey: apiKey
+            apiKey: apiKey,
+            endpointUrl: endpointUrl,
+            model: model,
+            mine: selectedMine
           })
         });
 
@@ -1490,7 +1643,13 @@
         replacePendingAssistantMessage(pendingId, `**Error communicating with Agent:** ${e.message}`, msg, null);
       } finally {
         btnSend.disabled = false;
-        scrollArea.scrollTop = scrollArea.scrollHeight;
+        const row = document.getElementById(pendingId);
+        if (row) {
+          const containerTop = scrollArea.getBoundingClientRect().top;
+          const rowTop = row.getBoundingClientRect().top;
+          const targetScrollTop = scrollArea.scrollTop + (rowTop - containerTop) - 16;
+          scrollArea.scrollTo({ top: Math.max(0, targetScrollTop), behavior: 'smooth' });
+        }
       }
     }
 

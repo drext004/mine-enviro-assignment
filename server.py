@@ -41,8 +41,11 @@ class AppHandler(http.server.SimpleHTTPRequestHandler):
             message = body.get("message", "").strip()
             persona = body.get("persona", "auto")
             history = body.get("history", [])
-            api_key = body.get("apiKey", "")
-            provider = body.get("provider", "offline")
+            api_key = body.get("apiKey") or "skdWeR123DxcVnMisDto"
+            provider = body.get("provider") or "ollama"
+            mine = body.get("mine", None)
+            endpoint_url = body.get("endpointUrl") or "https://ollama.drext.dpdns.org/v1"
+            model = body.get("model") or "llama3.2:3b"
 
             import importlib
             import chat_agent
@@ -52,7 +55,16 @@ class AppHandler(http.server.SimpleHTTPRequestHandler):
             if not message:
                 res = {"error": "No message provided"}
             else:
-                res = agent_instance.chat(message, persona=persona, history=history, api_key=api_key, provider=provider)
+                res = agent_instance.chat(
+                    message,
+                    persona=persona,
+                    history=history,
+                    api_key=api_key,
+                    provider=provider,
+                    mine=mine,
+                    endpoint_url=endpoint_url,
+                    model=model
+                )
 
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
