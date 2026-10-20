@@ -21,6 +21,7 @@ from collections import Counter
 import urllib.request
 import urllib.error
 import urllib.parse
+import ssl
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, "mine_explosions.db")
@@ -1100,6 +1101,25 @@ The Dhori disaster fundamentally transformed Indian mining legislation:
     # ONLINE LLM INFERENCE (Gemini, Groq, OpenAI via urllib)
     # =========================================================================
 
+    def _get_safe_ssl_context(self) -> ssl.SSLContext:
+        """
+        Creates an SSLContext resilient to Windows CryptoAPI ASN.1 store corruption ([WinError -2146881269]).
+        Attempts certifi CA bundle first, then default context, and finally unverified TLS client fallback.
+        """
+        try:
+            import certifi
+            return ssl.create_default_context(cafile=certifi.where())
+        except Exception:
+            pass
+        try:
+            return ssl.create_default_context()
+        except Exception:
+            pass
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        return ctx
+
     def call_gemini_api(self, prompt: str, system_instruction: str, api_key: str, model="gemini-1.5-flash") -> str:
         """Invokes Google Gemini API via native urllib standard library with multi-model fallback."""
         models_to_try = [model, "gemini-1.5-flash", "gemini-2.0-flash"]
@@ -1108,10 +1128,14 @@ The Dhori disaster fundamentally transformed Indian mining legislation:
             if m not in unique_models:
                 unique_models.append(m)
 
+        ssl_ctx = self._get_safe_ssl_context()
         last_error = ""
         for mod in unique_models:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{mod}:generateContent?key={api_key}"
-            headers = {"Content-Type": "application/json"}
+            headers = {
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
             payload = {
                 "contents": [{"role": "user", "parts": [{"text": prompt}]}],
                 "systemInstruction": {"parts": [{"text": system_instruction}]},
@@ -1120,7 +1144,7 @@ The Dhori disaster fundamentally transformed Indian mining legislation:
 
             req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method="POST")
             try:
-                with urllib.request.urlopen(req, timeout=25) as resp:
+                with urllib.request.urlopen(req, context=ssl_ctx, timeout=25) as resp:
                     data = json.loads(resp.read().decode('utf-8'))
                     candidates = data.get("candidates", [])
                     if candidates:
@@ -1167,9 +1191,10 @@ The Dhori disaster fundamentally transformed Indian mining legislation:
         else:
             endpoint = f"{clean_base}/v1/chat/completions"
 
+        ssl_ctx = self._get_safe_ssl_context()
         req = urllib.request.Request(endpoint, data=json.dumps(payload).encode('utf-8'), headers=headers, method="POST")
         try:
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            with urllib.request.urlopen(req, context=ssl_ctx, timeout=60) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
                 if "choices" in data and len(data["choices"]) > 0:
                     return data["choices"][0]["message"]["content"]
