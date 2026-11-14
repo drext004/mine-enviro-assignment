@@ -869,7 +869,7 @@ It is grounded in the official Directorate General of Mines Safety (**DGMS**) pu
   - $GR > 1.0\\%$: Active heating / fire (mandatory immediate withdrawal of personnel and panel isolation).
 - **Self-Contained Self-Rescuers (SCSR):** Every underground worker must carry a certified 60-minute chemical oxygen SCSR to survive afterdamp ($\\text{CO} > 0.4\\%$) in the event of any emergency.""")
 
-        lines.append("\n> [!IMPORTANT]\n> **Key Viva Takeaway:** Coal mine explosions are completely preventable. No explosion can initiate without an explosive gas pocket ($\\text{CH}_4$ 5–15%), and no flame can propagate if roadways are maintained at $\\ge 75\\%$ incombustible stone dust with certified barriers.")
+        lines.append("\n> [!IMPORTANT]\n> **Key Engineering Takeaway:** Coal mine explosions are completely preventable. No explosion can initiate without an explosive gas pocket ($\\text{CH}_4$ 5–15%), and no flame can propagate if roadways are maintained at $\\ge 75\\%$ incombustible stone dust with certified barriers.")
         return "\n".join(lines)
 
     def synthesize_disaster_dossier(self, query: str, entities: dict) -> str:

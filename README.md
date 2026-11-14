@@ -9,19 +9,22 @@ An interactive safety intelligence dashboard, relational database, and determini
 
 Based on the official 316-page publication by the **Directorate General of Mines Safety (DGMS)**: *SANKET (2016–2022)* and historical Indian mining disaster archives (1901–2022).
 
+> **For Faculty / Professor Evaluation:** Please see [**`PROFESSOR_EVALUATION_GUIDE.md`**](PROFESSOR_EVALUATION_GUIDE.md) for a complete self-guided walkthrough of all interactive features, copy-paste evaluation prompts, and verified ground-truth tables.
+
 ---
 
 ## 📌 Project Highlights
 
-- **Conversational Safety AI Agent (`chat_agent.py`):** An intelligent agent capable of conversing like an LLM using data from the 316-page SANKET PDF, relational databases, and Coal Mines Regulations (CMR 2017).
+- **Conversational Safety AI Agent (`chat_agent.py`):** An intelligent agent with custom TF-IDF Semantic RAG, natural-language colliery/coalfield auto-detection, and statutory grounding in the 316-page SANKET PDF, relational databases, and Coal Mines Regulations (CMR 2017).
 - **Specialized Operational Personas:**
   - **👷 Transferred Worker Safety Advisory:** Briefs miners transferred to unfamiliar collieries on historical hazards, operational dangers (misfires, solid blasting into blind headings, noxious gases), and generates pre-shift face safety checklists.
   - **🛠️ Project Manager / Engineer Revisit Plan:** Formulates exhaustive 5-phase operational re-entry protocols (remote atmospheric diagnostics, CMR Reg 153 ventilation restoration, strata checks, stone dust barriers under Reg 136, Mines Rescue Brigade escort) with one-click `.md` export.
   - **⚖️ DGMS Statutory Auditor:** Pinpoints CMR 2017 violations and judicial precedents across 19 Section 24 Courts of Inquiry.
   - **🔬 Mine Explosion Scientist:** Explains Coward's flammability diagram, Lower/Upper explosive limits ($5\% - 15\%$), and stone dust inerting standards.
-- **Dual-Engine Inference Strategy:**
-  - **Offline Expert Engine (Default):** 100% offline, zero-latency, zero external API keys or cost — guaranteed reliable during viva examinations.
-  - **Online LLM Engine:** Pluggable Google Gemini 2.5, Groq, or OpenAI API key integration directly in the browser settings.
+- **Tri-Mode Inference Strategy:**
+  - **Homelab Self-Hosted Ollama (`llama3.2:3b`):** Remote GPU inference via Cloudflare Tunnel with local RAG context injection.
+  - **Cloud LLM Engine:** Pluggable Google Gemini 3.x (`gemini-3.8-flash`, `gemini-3.5-flash-lite`, `gemini-3.6-flash`, `gemini-3.1-pro-preview`), Groq, or OpenAI API integration directly in the browser settings.
+  - **Offline Expert Engine:** 100% offline, `< 10 ms` latency, zero external API keys or cost — with automatic failover if any remote API is unreachable.
 - **120+ Years of Official Mining Data:**
   - **48 Major Explosion Disasters (1901–2022, $\ge 4$ deaths):** Documenting **1,361 miners killed**.
   - **19 In-Depth Investigative Cases (2016–2022):** Documenting **23 fatalities**, 12 serious injuries, physical failure mechanisms, and CMR statutory violations.
@@ -87,11 +90,12 @@ python query_tool.py
 ## 📁 Repository Structure
 
 ```text
-├── README.md                            # Project overview & documentation
-├── PROJECT_HANDOVER_AND_METHODOLOGY.md  # Detailed technical methodology & handover notes
-├── viva_cheat_sheet.md                  # High-yield exam scripts, formulas, and CMR rules
+├── README.md                            # Project overview & quick start
+├── PROFESSOR_EVALUATION_GUIDE.md        # Self-guided walkthrough & test prompts for evaluation
 ├── server.py                            # Native Python HTTP server & REST API
 ├── index.html                           # Modern safety intelligence web dashboard
+├── logo.png                             # Sanket application emblem
+├── chat_agent.py                        # Conversational AI Agent with TF-IDF RAG & 4 Personas
 ├── qa_engine.py                         # Dual SQL analytics & domain science Q&A engine
 ├── query_tool.py                        # Interactive terminal query tool
 ├── build_database.py                    # SQLite database generation script
@@ -99,9 +103,7 @@ python query_tool.py
 ├── parse_sanket_full.py                 # PyMuPDF data extraction pipeline from SANKET
 ├── coal_mine_explosions_sanket_data.md  # 850-line master text dataset
 ├── sanket0404_2024.pdf                  # Official DGMS publication (2016–2022)
-├── explo.docx                           # Mine explosion thermodynamics notes
-├── requirements.txt                     # Minimal dependencies (PyMuPDF for extraction)
-└── .gitignore                           # Standard Python gitignore
+└── requirements.txt                     # Minimal dependencies (PyMuPDF for extraction)
 ```
 
 ---
@@ -118,8 +120,8 @@ python query_tool.py
 
 ## 📖 Key Documentation
 
-- For step-by-step documentation from raw PDF extraction to system architecture: see [`PROJECT_HANDOVER_AND_METHODOLOGY.md`](PROJECT_HANDOVER_AND_METHODOLOGY.md).
-- For rapid viva preparation and spoken defense scripts: see [`viva_cheat_sheet.md`](viva_cheat_sheet.md).
+- **Self-Guided Evaluation & Feature Walkthrough:** see [`PROFESSOR_EVALUATION_GUIDE.md`](PROFESSOR_EVALUATION_GUIDE.md).
+- **Master Extracted Dataset (DGMS SANKET 2016–2022):** see [`coal_mine_explosions_sanket_data.md`](coal_mine_explosions_sanket_data.md).
 
 ---
 
