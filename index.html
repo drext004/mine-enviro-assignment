@@ -1420,7 +1420,7 @@
     // Settings
     function loadSettings() {
       let prov = localStorage.getItem('sanket_llm_provider');
-      if (!prov || prov === 'offline') {
+      if (!prov) {
         prov = 'ollama';
         localStorage.setItem('sanket_llm_provider', 'ollama');
       }
@@ -1675,10 +1675,56 @@
       stream.appendChild(row);
     }
 
-    function replacePendingAssistantMessage(id, markdown, userQuery, semanticMatch) {
+    function formatCleanMarkdown(md) {
+      if (!md) return '';
+      let t = md;
+      // Strip repetitive "I am Sanket..." self-introductions
+      t = t.replace(/^\s*(?:Hello[!.,]?\s*)?I am \*\*?Sanket\*\*?[^.\n]*\.\s*(?:Here is[^:\n]*[:.]\s*)?(?:\n+\s*---+\s*\n+)?/i, '');
+      t = t.replace(/^\s*I am Sanket,\s*your official AI[^.\n]*\.\s*(?:Here is[^.\n]*\.\s*)?(?:\n+\s*---+\s*\n+)?/i, '');
+
+      // Convert LaTeX chemical formulas and math notations to clean Unicode
+      t = t.replace(/\\text\{CH\}\s*_4|\\text\{CH\}_\{4\}|CH_4/g, 'CH₄')
+           .replace(/\\text\{O\}\s*_2|\\text\{O\}_\{2\}|O_2/g, 'O₂')
+           .replace(/\\text\{CO\}\s*_2|\\text\{CO\}_\{2\}|CO_2/g, 'CO₂')
+           .replace(/\\text\{N\}\s*_2|\\text\{N\}_\{2\}|N_2/g, 'N₂')
+           .replace(/\\text\{H\}\s*_2\\text\{S\}|H_2S/g, 'H₂S')
+           .replace(/\\text\{H\}\s*_2|H_2/g, 'H₂')
+           .replace(/\\text\{CO\}/g, 'CO')
+           .replace(/\\text\{m\}\^3\/\\text\{min\}/g, 'm³/min')
+           .replace(/\\text\{m\}\^3|m\^3/g, 'm³')
+           .replace(/\\text\{m\}\^2|m\^2/g, 'm²')
+           .replace(/\\text\{g\/m\}\^3/g, 'g/m³')
+           .replace(/\\text\{kg\/m\}\^2/g, 'kg/m²')
+           .replace(/\\text\{mg\/m\}\^3/g, 'mg/m³')
+           .replace(/\^\\circ\\text\{C\}|\^\\circ\s*C/g, '°C')
+           .replace(/\^\\circ/g, '°')
+           .replace(/\\ge\b|\\geq\b/g, '≥')
+           .replace(/\\le\b|\\leq\b/g, '≤')
+           .replace(/\\approx\b/g, '≈')
+           .replace(/\\times\b/g, '×')
+           .replace(/\\cdot\b/g, '·')
+           .replace(/\\Delta\b/g, 'Δ')
+           .replace(/\\rightarrow\b|\\to\b/g, '→')
+           .replace(/\\leftarrow\b/g, '←')
+           .replace(/\\mu\\text\{m\}|\\mu\s*m\b/g, 'μm')
+           .replace(/\\,\s*/g, ' ')
+           .replace(/\\%/g, '%')
+           .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '($1 / $2)')
+           .replace(/\\text\{([^{}]+)\}/g, '$1')
+           .replace(/\$\$([^$]+)\$\$/g, '\n> **$1**\n')
+           .replace(/\$([^$\n]+)\$/g, '$1');
+
+      // Format GitHub callouts (> [!IMPORTANT], > [!NOTE], > [!WARNING]) cleanly
+      t = t.replace(/^>\s*\[!(IMPORTANT|NOTE|WARNING|TIP|CAUTION)\]\s*$/gm, '> **$1:**');
+      t = t.replace(/^>\s*\[!(IMPORTANT|NOTE|WARNING|TIP|CAUTION)\]\s+/gm, '> **$1:** ');
+      return t.trim();
+    }
+
+    function replacePendingAssistantMessage(id, rawMarkdown, userQuery, semanticMatch) {
       const row = document.getElementById(id);
       if (!row) return;
 
+      const markdown = formatCleanMarkdown(rawMarkdown);
       const isRevisitPlan = markdown.includes('Operational Re-entry') || markdown.includes('Revisit Safety Plan');
 
       let badgeHtml = '';
@@ -1692,12 +1738,15 @@
       `;
       }
 
+      const contentId = `${id}-stream-content`;
+      const actionsId = `${id}-actions`;
+
       row.innerHTML = `
       <div class="msg-icon"><img src="logo.png" alt="Sanket"></div>
       <div class="msg-body">
         ${badgeHtml}
-        ${marked.parse(markdown)}
-        <div class="msg-actions">
+        <div id="${contentId}"></div>
+        <div class="msg-actions" id="${actionsId}" style="opacity: 0; transition: opacity 0.25s ease;">
           <button class="btn-msg-action" onclick="copyResponseText(this)">Copy</button>
           ${isRevisitPlan ? `<button class="btn-msg-action export" onclick="exportRevisitPlan(${JSON.stringify(markdown)})">Download Revisit Plan (.md)</button>` : ''}
         </div>
@@ -1706,6 +1755,34 @@
 
       chatHistory.push({ role: "user", content: userQuery });
       chatHistory.push({ role: "assistant", content: markdown });
+
+      // Smooth progressive typing effect
+      const contentEl = document.getElementById(contentId);
+      const actionsEl = document.getElementById(actionsId);
+      if (!contentEl) return;
+
+      const totalLen = markdown.length;
+      // Natural reading-pace typing speed (~1-2 words per tick at 38ms intervals)
+      const stepSize = Math.max(4, Math.min(12, Math.ceil(totalLen / 280)));
+      let currentIdx = 0;
+
+      function typeNextChunk() {
+        currentIdx = Math.min(totalLen, currentIdx + stepSize);
+        // Advance to next space or newline so words/markdown tags don't flicker mid-token
+        while (currentIdx < totalLen && markdown[currentIdx] !== ' ' && markdown[currentIdx] !== '\n') {
+          currentIdx++;
+        }
+        const slice = markdown.slice(0, currentIdx);
+        if (currentIdx < totalLen) {
+          contentEl.innerHTML = marked.parse(slice + ' ▍');
+          requestAnimationFrame(() => setTimeout(typeNextChunk, 38));
+        } else {
+          contentEl.innerHTML = marked.parse(markdown);
+          if (actionsEl) actionsEl.style.opacity = '1';
+        }
+      }
+
+      typeNextChunk();
     }
 
     function copyResponseText(btn) {

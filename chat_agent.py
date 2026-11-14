@@ -1120,44 +1120,153 @@ The Dhori disaster fundamentally transformed Indian mining legislation:
         ctx.verify_mode = ssl.CERT_NONE
         return ctx
 
-    def call_gemini_api(self, prompt: str, system_instruction: str, api_key: str, model="gemini-1.5-flash") -> str:
-        """Invokes Google Gemini API via native urllib standard library with multi-model fallback."""
-        models_to_try = [model, "gemini-1.5-flash", "gemini-2.0-flash"]
-        unique_models = []
-        for m in models_to_try:
-            if m not in unique_models:
-                unique_models.append(m)
+    def clean_scientific_markdown(self, text: str) -> str:
+        """Converts raw LaTeX expressions into clean Unicode and strips repetitive self-introductions."""
+        if not text:
+            return ""
+        t = text
+        # Strip repetitive "I am Sanket..." self-introductions at the start of normal answers
+        t = re.sub(
+            r'^\s*(?:Hello[!.,]?\s*)?I am \*\*?Sanket\*\*?[^.\n]*\.\s*(?:Here is[^:\n]*[:.]\s*)?(?:\n+\s*---+\s*\n+)?',
+            '',
+            t,
+            flags=re.IGNORECASE
+        )
+        t = re.sub(
+            r'^\s*I am Sanket,\s*your official AI[^.\n]*\.\s*(?:Here is[^.\n]*\.\s*)?(?:\n+\s*---+\s*\n+)?',
+            '',
+            t,
+            flags=re.IGNORECASE
+        )
+
+        # Replace common LaTeX chemical formulas and math notations with clean Unicode
+        replacements = [
+            (r'\\text\{CH\}\s*_4', 'CH₄'),
+            (r'\\text\{CH\}_\{4\}', 'CH₄'),
+            (r'CH_4', 'CH₄'),
+            (r'\\text\{O\}\s*_2', 'O₂'),
+            (r'\\text\{O\}_\{2\}', 'O₂'),
+            (r'O_2', 'O₂'),
+            (r'\\text\{CO\}\s*_2', 'CO₂'),
+            (r'\\text\{CO\}_\{2\}', 'CO₂'),
+            (r'CO_2', 'CO₂'),
+            (r'\\text\{N\}\s*_2', 'N₂'),
+            (r'\\text\{N\}_\{2\}', 'N₂'),
+            (r'N_2', 'N₂'),
+            (r'\\text\{H\}\s*_2\\text\{S\}', 'H₂S'),
+            (r'\\text\{H\}\s*_2', 'H₂'),
+            (r'H_2S', 'H₂S'),
+            (r'H_2', 'H₂'),
+            (r'\\text\{CO\}', 'CO'),
+            (r'\\text\{m\}\^3/\\text\{min\}', 'm³/min'),
+            (r'\\text\{m\}\^3', 'm³'),
+            (r'\\text\{m\}\^2', 'm²'),
+            (r'\\text\{g/m\}\^3', 'g/m³'),
+            (r'\\text\{kg/m\}\^2', 'kg/m²'),
+            (r'\\text\{mg/m\}\^3', 'mg/m³'),
+            (r'm\^3', 'm³'),
+            (r'm\^2', 'm²'),
+            (r'\^\\circ\\text\{C\}', '°C'),
+            (r'\^\\circ\s*C', '°C'),
+            (r'\^\\circ', '°'),
+            (r'\\ge\b', '≥'),
+            (r'\\geq\b', '≥'),
+            (r'\\le\b', '≤'),
+            (r'\\leq\b', '≤'),
+            (r'\\approx\b', '≈'),
+            (r'\\times\b', '×'),
+            (r'\\cdot\b', '·'),
+            (r'\\Delta\b', 'Δ'),
+            (r'\\rightarrow\b', '→'),
+            (r'\\to\b', '→'),
+            (r'\\leftarrow\b', '←'),
+            (r'\\mu\\text\{m\}', 'μm'),
+            (r'\\mu\s*m\b', 'μm'),
+            (r'\\,\s*', ' '),
+            (r'\\%', '%'),
+        ]
+        for pat, rep in replacements:
+            t = re.sub(pat, rep, t)
+
+        # Convert \frac{a}{b} -> (a / b)
+        t = re.sub(r'\\frac\{([^{}]+)\}\{([^{}]+)\}', r'(\1 / \2)', t)
+        # Unwrap \text{...}
+        t = re.sub(r'\\text\{([^{}]+)\}', r'\1', t)
+        # Strip display math $$ ... $$ and inline math $ ... $ delimiters
+        t = re.sub(r'\$\$([^$]+)\$\$', lambda m: f"\n> **{m.group(1).strip()}**\n", t)
+        t = re.sub(r'\$([^$\n]+)\$', lambda m: m.group(1).strip(), t)
+        return t.strip()
+
+    def call_gemini_api(self, prompt: str, system_instruction: str, api_key: str, model="gemini-3.8-flash") -> str:
+        """Invokes Google Gemini API via native urllib standard library with current 3.x models and dynamic discovery fallback."""
+        models_to_try = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.1-pro-preview"]
+        if model and model.startswith("gemini") and model not in models_to_try and "1.5" not in model and "2.0" not in model:
+            models_to_try.insert(0, model)
 
         ssl_ctx = self._get_safe_ssl_context()
-        last_error = ""
-        for mod in unique_models:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{mod}:generateContent?key={api_key}"
-            headers = {
-                "Content-Type": "application/json",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            }
-            payload = {
-                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                "systemInstruction": {"parts": [{"text": system_instruction}]},
-                "generationConfig": {"temperature": 0.3, "maxOutputTokens": 8192}
-            }
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        payload = {
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "systemInstruction": {"parts": [{"text": system_instruction}]},
+            "generationConfig": {"temperature": 0.3, "maxOutputTokens": 8192}
+        }
+        encoded_payload = json.dumps(payload).encode('utf-8')
 
-            req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method="POST")
+        last_error = ""
+        for mod in models_to_try:
+            clean_mod = mod.replace("models/", "")
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_mod}:generateContent?key={api_key}"
+            req = urllib.request.Request(url, data=encoded_payload, headers=headers, method="POST")
             try:
                 with urllib.request.urlopen(req, context=ssl_ctx, timeout=25) as resp:
                     data = json.loads(resp.read().decode('utf-8'))
                     candidates = data.get("candidates", [])
                     if candidates:
                         parts = candidates[0].get("content", {}).get("parts", [])
-                        if parts:
-                            return parts[0].get("text", "")
+                        text_parts = [p.get("text", "") for p in parts if not p.get("thought") and p.get("text")]
+                        if text_parts:
+                            return "".join(text_parts)
             except urllib.error.HTTPError as e:
                 err_body = e.read().decode('utf-8', errors='ignore')
                 last_error = f"Gemini API Error (HTTP {e.code}): {err_body}"
+                if e.code in (401, 403, 429):
+                    return last_error
                 continue
             except Exception as e:
                 last_error = f"Error contacting Gemini API: {str(e)}"
                 continue
+
+        # Dynamic model discovery fallback if static model names were rotated by Google
+        try:
+            list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+            list_req = urllib.request.Request(list_url, headers=headers, method="GET")
+            with urllib.request.urlopen(list_req, context=ssl_ctx, timeout=10) as resp:
+                list_data = json.loads(resp.read().decode('utf-8'))
+                avail_models = [
+                    m.get("name", "").replace("models/", "")
+                    for m in list_data.get("models", [])
+                    if "generateContent" in m.get("supportedGenerationMethods", [])
+                    and "gemini" in m.get("name", "")
+                ]
+                avail_models.sort(key=lambda n: (0 if "flash" in n else 1, n))
+                for dyn_mod in avail_models[:2]:
+                    if dyn_mod in models_to_try:
+                        continue
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{dyn_mod}:generateContent?key={api_key}"
+                    req = urllib.request.Request(url, data=encoded_payload, headers=headers, method="POST")
+                    with urllib.request.urlopen(req, context=ssl_ctx, timeout=25) as g_resp:
+                        data = json.loads(g_resp.read().decode('utf-8'))
+                        candidates = data.get("candidates", [])
+                        if candidates:
+                            parts = candidates[0].get("content", {}).get("parts", [])
+                            text_parts = [p.get("text", "") for p in parts if not p.get("thought") and p.get("text")]
+                            if text_parts:
+                                return "".join(text_parts)
+        except Exception:
+            pass
 
         return last_error or "Error contacting Gemini API"
 
@@ -1170,16 +1279,6 @@ The Dhori disaster fundamentally transformed Indian mining legislation:
         if api_key and api_key.strip():
             headers["Authorization"] = f"Bearer {api_key.strip()}"
 
-        payload = {
-            "model": model or "llama3.2:3b",
-            "messages": [
-                {"role": "system", "content": system_instruction},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.2,
-            "max_tokens": 1200
-        }
-
         # Normalize base_url to ensure it hits /chat/completions
         clean_base = (base_url or "").strip().rstrip("/")
         if not clean_base:
@@ -1190,6 +1289,17 @@ The Dhori disaster fundamentally transformed Indian mining legislation:
             endpoint = f"{clean_base}/chat/completions"
         else:
             endpoint = f"{clean_base}/v1/chat/completions"
+
+        is_ollama = "ollama" in clean_base.lower() or "11434" in clean_base or "11435" in clean_base
+        payload = {
+            "model": model or "llama3.2:3b",
+            "messages": [
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.2,
+            "max_tokens": 350 if is_ollama else 1200
+        }
 
         ssl_ctx = self._get_safe_ssl_context()
         req = urllib.request.Request(endpoint, data=json.dumps(payload).encode('utf-8'), headers=headers, method="POST")
@@ -1255,23 +1365,49 @@ The Dhori disaster fundamentally transformed Indian mining legislation:
         # Build local domain context
         mine_dossier = self.build_mine_dossier(entities["mine"]) if entities.get("mine") else None
         
+        conf_str = "88.5%"
+        if top_match:
+            conf_val = min(0.985, max(0.68, top_match["score"] * 3.8))
+            conf_str = f"{conf_val * 100:.1f}%"
+
+        semantic_info = {
+            "title": top_match["title"] if top_match else "DGMS SANKET Safety Corpus",
+            "score": round(top_match["score"], 3) if top_match else 0.0,
+            "confidence": conf_str
+        }
+
+        # Instant greeting / system docs bypass (0.005s response, no remote wait needed)
+        if persona == "greeting":
+            return {
+                "reply": self.clean_scientific_markdown(self.synthesize_greeting_and_docs(q)),
+                "persona": persona,
+                "mode": "offline_semantic_rag",
+                "semantic_match": {
+                    "title": "Sanket System Documentation & Capabilities",
+                    "score": 1.0,
+                    "confidence": "99.9%"
+                },
+                "entities": entities
+            }
+
         # Check if online LLM is requested AND api_key is available
         online_failed = False
         fallback_reason = ""
         effective_provider = (provider or "offline").lower()
         if effective_provider != "offline":
-            # Format top relevant RAG context for Llama 3.2 3B
+            # Format top relevant RAG context with clean Unicode (no raw LaTeX)
             rag_context_snippets = []
             if matched_chunks:
                 for c in matched_chunks[:2]:
-                    content_snip = c.get("content", "").strip()
-                    if len(content_snip) > 600:
-                        content_snip = content_snip[:600] + "..."
+                    content_snip = self.clean_scientific_markdown(c.get("content", "").strip())
+                    if len(content_snip) > 650:
+                        content_snip = content_snip[:650] + "..."
                     rag_context_snippets.append(f"[{c.get('title')}]:\n{content_snip}")
             rag_context_text = "\n\n".join(rag_context_snippets)
 
-            sys_prompt = f"""You are Sanket, the official AI Mining Safety Intelligence Agent.
-Ground your response strictly in the following verified DGMS SANKET & CMR 2017 facts:
+            sys_prompt = f"""Role: Official Mining Safety & Environmental Engineering Intelligence System grounded in DGMS SANKET (2016–2022) and Coal Mines Regulations (CMR 2017).
+
+Verified Reference Data:
 {rag_context_text}
 
 Detected Context:
@@ -1280,10 +1416,12 @@ Detected Context:
 - Assigned Role: {entities.get('role')}
 {f'- Local Database Dossier: {json.dumps(mine_dossier, ensure_ascii=False)[:400]}' if mine_dossier else ''}
 
-Instructions:
-- Base historical facts, disaster names, and figures strictly on official DGMS records (e.g. Dhori 1965: 268 killed, Chinakuri 1958: 176 killed, Bhatdee 2006: 50 killed).
+Strict Formatting & Style Rules:
+- Dive straight into answering the user's question directly with a clear Markdown heading. NEVER start with "I am Sanket" or any self-introduction preamble.
+- NEVER use LaTeX math syntax ($...$ or \\text{{...}} or \\ge). Always use clean Unicode symbols and subscripts directly (e.g., CH₄, O₂, CO₂, N₂, H₂S, ≥, ≤, °C, μm, g/m³, m³/min, m/s).
+- Do NOT use emojis anywhere in headings or text.
+- Base historical facts, disaster names, and figures strictly on official DGMS records (e.g., Dhori 1965: 268 killed, Chinakuri 1958: 176 killed, Bhatdee 2006: 50 killed).
 - Cite exact Coal Mines Regulations (CMR 2017) including Reg 136 (stone dusting), Reg 153 (ventilation), Reg 169 (gas trip), Reg 204 (shotfiring).
-- Format clearly in GitHub Markdown with bullet points and bold technical terms.
 """
             try:
                 if effective_provider in ["ollama", "homelab"]:
@@ -1292,7 +1430,8 @@ Instructions:
                     key = (api_key or "skdWeR123DxcVnMisDto").strip()
                     reply = self.call_openai_compatible_api(q, sys_prompt, key, base, m)
                 elif effective_provider == "gemini":
-                    reply = self.call_gemini_api(q, sys_prompt, (api_key or "").strip())
+                    gem_model = model if (model and model.startswith("gemini")) else "gemini-3.8-flash"
+                    reply = self.call_gemini_api(q, sys_prompt, (api_key or "").strip(), model=gem_model)
                 elif effective_provider == "groq":
                     reply = self.call_openai_compatible_api(q, sys_prompt, api_key.strip(), "https://api.groq.com/openai/v1", model or "llama-3.3-70b-versatile")
                 elif effective_provider == "openai":
@@ -1304,14 +1443,15 @@ Instructions:
                     reply = self.call_openai_compatible_api(q, sys_prompt, key, base, m)
 
                 # Check if API returned an error string instead of valid generation
-                if not reply or reply.startswith("Gemini API Error") or reply.startswith("Error contacting") or "503" in reply or "429" in reply or "400" in reply:
+                if not reply or reply.startswith("Gemini API Error") or reply.startswith("Error contacting"):
                     online_failed = True
-                    fallback_reason = f"Remote LLM ({effective_provider}) error: {reply[:120]}"
+                    fallback_reason = f"Remote LLM ({effective_provider}) error: {reply[:140]}"
                 else:
                     return {
-                        "reply": reply,
+                        "reply": self.clean_scientific_markdown(reply),
                         "persona": persona,
                         "mode": f"online_{effective_provider}",
+                        "semantic_match": semantic_info,
                         "entities": entities
                     }
             except Exception as e:
@@ -1354,20 +1494,11 @@ Instructions:
         else:
             reply = self.synthesize_causes_answer(q)
 
+        reply = self.clean_scientific_markdown(reply)
+
         # Prepend subtle alert if fallen back from cloud
         if online_failed:
             reply = f"> [!NOTE]\n> {fallback_reason}. Seamlessly switched to **Sanket Local Offline Safety Intelligence Engine**.\n\n" + reply
-
-        conf_str = "88.5%"
-        if top_match:
-            conf_val = min(0.985, max(0.68, top_match["score"] * 3.8))
-            conf_str = f"{conf_val * 100:.1f}%"
-
-        semantic_info = {
-            "title": top_match["title"] if top_match else "DGMS SANKET Safety Corpus",
-            "score": round(top_match["score"], 3) if top_match else 0.0,
-            "confidence": conf_str
-        }
 
         return {
             "reply": reply,
