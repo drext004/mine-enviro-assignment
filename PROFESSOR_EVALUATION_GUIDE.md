@@ -1,4 +1,5 @@
-# Professor's Self-Guided Evaluation & Feature Walkthrough
+# Group 2 Project Submission
+
 ## Sanket (संकेत) — Coal Mine Explosions & Safety Intelligence System
 
 **Course:** 4th-Year B.Tech Mining Environmental Engineering  
